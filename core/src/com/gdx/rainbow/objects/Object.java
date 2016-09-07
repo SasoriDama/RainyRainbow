@@ -34,6 +34,7 @@ public class Object {
     public void set(World world, float x, float y) {
 
         configBodyDef();
+        setPosition(x, y);
         body = world.createBody(bodyDef);
         configFixtureDef();
         fixture = body.createFixture(fixtureDef);

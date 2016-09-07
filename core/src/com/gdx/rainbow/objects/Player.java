@@ -27,7 +27,7 @@ public class Player extends Object {
 
     protected void configFixtureDef() {
         PolygonShape box = new PolygonShape();
-        box.setAsBox(256/4, 256/4);
+        box.setAsBox(256/5, 256/5);
 
         fixtureDef.shape = box;
         fixtureDef.density = .5f;
