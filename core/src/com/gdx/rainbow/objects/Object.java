@@ -3,6 +3,7 @@ package com.gdx.rainbow.objects;
 import com.badlogic.gdx.physics.box2d.*;
 import com.badlogic.gdx.physics.box2d.BodyDef.BodyType;
 import com.gdx.rainbow.Assets;
+import com.gdx.rainbow.GameScreen;
 import net.dermetfan.gdx.graphics.g2d.Box2DSprite;
 
 /**
@@ -11,6 +12,15 @@ import net.dermetfan.gdx.graphics.g2d.Box2DSprite;
 public class Object {
 
     public static final int PLAYER = 0, CLOUD = 1;
+
+    public boolean removed = false;
+
+    //Collision Filters
+    public static final short CATEGORY_PLAYER = 0x0001;
+    public static final short CATEGORY_CLOUD = 0x0002;
+
+    public static final short MASK_PLAYER = -1;
+    public static final short MASK_CLOUD = CATEGORY_CLOUD;
 
     public Body body;
 
@@ -31,14 +41,15 @@ public class Object {
         fixtureDef = new FixtureDef();
     }
 
-    public void set(World world, float x, float y) {
+    public void set(GameScreen gameScreen, float x, float y) {
 
         configBodyDef();
         setPosition(x, y);
-        body = world.createBody(bodyDef);
+        body = gameScreen.world.createBody(bodyDef);
         configFixtureDef();
         fixture = body.createFixture(fixtureDef);
-
+        body.setFixedRotation(true);
+        gameScreen.objects.add(this);
     }
 
     protected void configBodyDef() {

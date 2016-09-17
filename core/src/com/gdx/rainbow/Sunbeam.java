@@ -1,11 +1,13 @@
-package com.gdx.rainbow.objects;
+package com.gdx.rainbow;
 
+import com.badlogic.gdx.Game;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Cursor;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Polygon;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.Body;
+import com.gdx.rainbow.objects.Player;
 import com.gdx.rainbow.MyGdxGame;
 
 /**
@@ -17,12 +19,13 @@ public class Sunbeam {
     private float width, height;
     public Polygon shape;
 
-    private float drawLineSpacing = 3f;
+    private float drawLineSpacing = .125f/20;
 
     public Sunbeam() {
         shape = new Polygon();
-        width = 200;
-        height = MyGdxGame.HEIGHT;
+        //width = 200;
+        width = 4f * (Player.SIZE);
+        height = GameScreen.UNIT_HEIGHT;
         xStart = -width/2;
 
         setVerteces();
@@ -30,12 +33,13 @@ public class Sunbeam {
 
     private float calcDx(float xDest) {
         //x comp of vector between center and newX
-        float dxx = ((xDest) - xCenter);
+        float dxx = (xDest - xCenter);
+        //if (dxx < .001) return 0;
 
         float dx = 1;
         if (dxx < 0) dx = -1;
         if (dxx > 0) dx = 1;
-        dx *= 10;
+       // dx *= 40;
         return dxx;
     }
 
@@ -43,16 +47,16 @@ public class Sunbeam {
         float[] vertices = new float[8];
         //First Vertex Top Left
         vertices[0] = xStart;
-        vertices[1] = MyGdxGame.HEIGHT/2;
+        vertices[1] = GameScreen.UNIT_HEIGHT/2;
         //Second Vertex Bottom Left
         vertices[2] = xStart;
-        vertices[3] = MyGdxGame.HEIGHT/2 - height + 1;
+        vertices[3] = GameScreen.UNIT_HEIGHT/2 - height;
         //Third Vertex Bottom Right
         vertices[4] = xStart + width;
-        vertices[5] = MyGdxGame.HEIGHT/2 - height + 1;
+        vertices[5] = GameScreen.UNIT_HEIGHT/2 - height;
         //Fourth Vertex Top Right
         vertices[6] = xStart + width;
-        vertices[7] = MyGdxGame.HEIGHT/2;
+        vertices[7] = GameScreen.UNIT_HEIGHT/2;
         shape.setVertices(vertices);
     }
 
@@ -60,16 +64,16 @@ public class Sunbeam {
         float[] vertices = new float[8];
         //First Vertex Top Left
         vertices[0] = xStart;
-        vertices[1] = MyGdxGame.HEIGHT/2;
+        vertices[1] = GameScreen.UNIT_HEIGHT/2;
         //Second Vertex Bottom Left
         vertices[2] = xStart + dx;
-        vertices[3] = MyGdxGame.HEIGHT/2 - height + 1;
+        vertices[3] = GameScreen.UNIT_HEIGHT/2 - height;
         //Third Vertex Bottom Right
         vertices[4] = xStart + width + dx;
-        vertices[5] = MyGdxGame.HEIGHT/2 - height + 1;
+        vertices[5] = GameScreen.UNIT_HEIGHT/2 - height;
         //Fourth Vertex Top Right
         vertices[6] = xStart + width;
-        vertices[7] = MyGdxGame.HEIGHT/2;
+        vertices[7] = GameScreen.UNIT_HEIGHT/2;
         shape.setVertices(vertices);
     }
 
@@ -78,6 +82,7 @@ public class Sunbeam {
 
         //Second Vertex Bottom Left xCoord
         vertices[2] += dx * delta;
+        xCenter = vertices[2] + width/2;
         //Third Vertex Bottom Right xCoord
         vertices[4] += dx * delta;
 
@@ -86,9 +91,10 @@ public class Sunbeam {
 
     public void update(float xDest, float delta) {
         //setVerteces(xDest);
-        xCenter = xStart + width/2;
+        //xCenter = shape.getVertices().get
         float dx = calcDx(xDest);
-        //System.out.println(dx);
+        //dx = 0;
+        //System.out.println("SUNBEAM MOVEMENT DISABLED");
         //if (xCenter + dx * delta != xDest)
         pushVerteces(dx, delta);
          /* float[] vertices = shape.getVertices();
@@ -109,17 +115,17 @@ public class Sunbeam {
         sr.setColor(Color.WHITE);
 
         for (int i = 0; i < width/drawLineSpacing; i ++ ) {
-            sr.line(MyGdxGame.WIDTH/2 + vertices[0] + i * drawLineSpacing, MyGdxGame.HEIGHT/2 + vertices[1], MyGdxGame.WIDTH/2 + vertices[2] + i * drawLineSpacing, MyGdxGame.HEIGHT/2 + vertices[3]);
+            sr.line(vertices[0] + i * drawLineSpacing, vertices[1], vertices[2] + i * drawLineSpacing, vertices[3]);
         }
     }
 
     public void drawBounds(ShapeRenderer sr) {
         float[] vertices = shape.getVertices();
         sr.setColor(Color.BLACK);
-        sr.line(MyGdxGame.WIDTH/2 + vertices[0], MyGdxGame.HEIGHT/2 + vertices[1], MyGdxGame.WIDTH/2 + vertices[2], MyGdxGame.HEIGHT/2 + vertices[3]);
-        sr.line(MyGdxGame.WIDTH/2 + vertices[2], MyGdxGame.HEIGHT/2 + vertices[3], MyGdxGame.WIDTH/2 + vertices[4], MyGdxGame.HEIGHT/2 + vertices[5]);
-        sr.line(MyGdxGame.WIDTH/2 + vertices[4], MyGdxGame.HEIGHT/2 + vertices[5], MyGdxGame.WIDTH/2 + vertices[6], MyGdxGame.HEIGHT/2 + vertices[7]);
-        sr.line(MyGdxGame.WIDTH/2 + vertices[6], MyGdxGame.HEIGHT/2 + vertices[7], MyGdxGame.WIDTH/2 + vertices[0], MyGdxGame.HEIGHT/2 + vertices[1]);
+        sr.line(vertices[0], vertices[1], vertices[2], vertices[3]);
+        sr.line(vertices[2], vertices[3], vertices[4], vertices[5]);
+        sr.line(vertices[4], vertices[5], vertices[6], vertices[7]);
+        sr.line(vertices[6], vertices[7], vertices[0], vertices[1]);
     }
 
     public boolean contains(Body b) {

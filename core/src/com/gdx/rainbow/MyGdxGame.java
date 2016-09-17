@@ -16,8 +16,8 @@ import net.dermetfan.gdx.graphics.g2d.Box2DSprite;
 
 public class MyGdxGame extends Game {
 
-	public static final int WIDTH = 1920/2;
-	public static final int HEIGHT = 1200/2;
+	public static int WIDTH = 1920;//1920/2;
+	public static int HEIGHT = 1200;//1200/2;
 
 	public static final String TITLE = "Rainy Rainbow";
 
@@ -28,11 +28,14 @@ public class MyGdxGame extends Game {
 	    batcher = new SpriteBatch();
 		Assets.load();
 		setScreen(new GameScreen(this));
+
+		MyGdxGame.WIDTH = Gdx.graphics.getWidth();
+		MyGdxGame.HEIGHT = Gdx.graphics.getHeight();
+
 	}
 
 	@Override
 	public void render () {
-
 		super.render();
 
 	}
