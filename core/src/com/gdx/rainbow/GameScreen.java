@@ -57,7 +57,7 @@ public class GameScreen extends ScreenAdapter implements InputProcessor {
 
     public static float CLOUD_WIN_TIME = 10;
 
-    public final float PLAYER_PUSH_RANGE = 1f;
+    public final float PLAYER_PUSH_RANGE = 1.5f;
 
     //Temporary Shape Renderer
     ShapeRenderer sr;
@@ -99,8 +99,8 @@ public class GameScreen extends ScreenAdapter implements InputProcessor {
 
         rainParticles = new ParticleSystem(.01f);
 
-        //Cloud c = (Cloud) Object.createObject(Object.CLOUD);
-        //c.set(this, 0, 0, new Vector2(0, 0));
+        Cloud c = (Cloud) Object.createObject(Object.CLOUD);
+        c.set(this, 0, 0, new Vector2(0, 0));
     }
 
     public void spawnCloud() {
@@ -148,7 +148,7 @@ public class GameScreen extends ScreenAdapter implements InputProcessor {
 
                 if (o.body.getPosition().x < -GameScreen.UNIT_WIDTH/2 || o.body.getPosition().x > GameScreen.UNIT_WIDTH/2 ||
                         o.body.getPosition().y < -GameScreen.UNIT_HEIGHT/2 || o.body.getPosition().y > GameScreen.UNIT_HEIGHT/2) {
-                        o.removed = true;
+                        //o.removed = true;
                 }
 
                 if (sunClouds.contains(o)) {
@@ -182,7 +182,8 @@ public class GameScreen extends ScreenAdapter implements InputProcessor {
         //vector between desination and player;
         force.set(endLocation.x - startLocation.x, endLocation.y - startLocation.y);
         force.nor();
-        force.scl(.030f);
+        //force.scl(.030f);
+        force.scl(.015f);
         //player.body.applyForce(force, player.body.getPosition(), true);
         player.body.applyLinearImpulse(force, player.body.getPosition(), true);
         //System.out.println(player.body.getLinearVelocity().len());
@@ -195,9 +196,14 @@ public class GameScreen extends ScreenAdapter implements InputProcessor {
         //vector between desination and player;
         float dx = endLocation.x - startLocation.x;
         float dy = endLocation.y - startLocation.y;
+        float xDir = 1;
+        float yDir = 1;
+        if (dx < 0) xDir = -1;
+        if (dy < 0) yDir = -1;
+        if (Math.abs(dx) < .1f) dx = .1f * xDir;
+        if (Math.abs(dy) < .1f) dy = .1f * yDir;
         force.set(1/dx, 1/dy);
         System.out.println("Pushed with: " + 1/dx + ", " + 1/dy);
-        if (force.len() < 0.90f) return;
         force.scl(-.1f);
         c.body.applyForce(force, c.body.getPosition(), true);
     }
@@ -217,7 +223,7 @@ public class GameScreen extends ScreenAdapter implements InputProcessor {
         this.cloudTimer += delta;
         if (cloudTimer >= nextCloudTime) {
             cloudTimer = 0;
-            this.spawnCloud();
+            //this.spawnCloud();
         }
     }
 
@@ -251,6 +257,22 @@ public class GameScreen extends ScreenAdapter implements InputProcessor {
         sunBeam.draw(sr);
         sr.setColor(Color.BLACK);
         //sr.line(MyGdxGame.WIDTH/2 + player.body.getPosition().x, MyGdxGame.HEIGHT/2 + player.body.getPosition().y, MyGdxGame.WIDTH/2 + mouseLocation.x, MyGdxGame.HEIGHT/2 + mouseLocation.y);
+        //box.setAsBox(.768f * .98f, .356f * .98f);
+        sr.setColor(Color.ORANGE);
+        for (Object o: objects) {
+          if (o instanceof Cloud) {
+              if (focusedCloud == o) sr.setColor(Color.GREEN);
+              else sr.setColor(Color.ORANGE);
+              float x = o.body.getPosition().x;
+              float y = o.body.getPosition().y;
+              float width =  Cloud.WIDTH * 1.25f;
+              float height = Cloud.HEIGHT * 1.25f;
+              sr.line(x - width/2, y - height/2, x - width/2, y + height/2);
+              sr.line(x - width/2, y + height/2, x + width/2, y + height/2);
+              sr.line(x + width/2, y + height/2, x + width/2, y - height/2);
+              sr.line(x + width/2, y - height/2, x - width/2, y - height/2);
+          }
+        }
 
         rainParticles.drawParticles(sr);
         sr.end();
@@ -357,7 +379,21 @@ public class GameScreen extends ScreenAdapter implements InputProcessor {
     }
 
     @Override
-    public boolean mouseMoved(int screenX, int screenY) {return false;}
+    public boolean mouseMoved(int screenX, int screenY) {
+
+        float pixX = (screenX - MyGdxGame.WIDTH/2);
+        float pixY = (-(screenY - MyGdxGame.HEIGHT/2));
+        mouseLocation.set(pixX/256.00f, pixY/256.00f);
+
+        for (Object o: objects) {
+            if (o instanceof Cloud) {
+                if (o.body.getFixtureList().first().testPoint(mouseLocation)) {
+
+                }
+            }
+        }
+
+        return false;}
 
     @Override
     public boolean scrolled(int amount) {

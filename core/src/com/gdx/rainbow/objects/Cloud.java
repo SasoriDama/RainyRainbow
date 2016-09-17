@@ -16,6 +16,12 @@ public class Cloud extends Object {
 
     public float sunTimer = 0;
 
+    //public static final float WIDTH = .768f * .98f;
+    //public static final float HEIGHT = .356f * .98f;
+
+    public static final float WIDTH = .768f * .85f;
+    public static final float HEIGHT = .356f * .85f;
+
     public Cloud() {
         super();
     }
@@ -66,10 +72,10 @@ public class Cloud extends Object {
     protected void configFixtureDef() {
         PolygonShape box = new PolygonShape();
         //box.setAsBox((768/7), 356/7);
-        box.setAsBox(.768f * .98f, .356f * .98f);
+        box.setAsBox(WIDTH, HEIGHT);
 
         fixtureDef.shape = box;
-        fixtureDef.density = 1.6f;
+        fixtureDef.density = 1.35f;
         fixtureDef.friction = .4f;
         fixtureDef.restitution = 1f;
         fixtureDef.filter.categoryBits = Object.CATEGORY_CLOUD;

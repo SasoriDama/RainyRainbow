@@ -33,10 +33,8 @@ public class Assets {
         sun_timer_image = loadTexture("data/sun_timer.png");
         sun_timer_tick_image = loadTexture("data/sun_tick.png");
         player_image = loadBox2DSprite("data/player.png");
-        //player_image.setScale(.18f);
         cloud_image = loadBox2DSprite("data/cloudthree.png");
-        //cloud_image.setScale(.18f);
-        //cloud_image.setScale(1.7f, 1.7f);
+        cloud_image.setScale(1.25f);
     }
 
     public static void playSound (Sound sound) {
