@@ -6,18 +6,13 @@ import com.badlogic.gdx.graphics.*;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.MathUtils;
-import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.viewport.FillViewport;
 import com.gdx.rainbow.objects.*;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.*;
 import com.gdx.rainbow.objects.Object;
 import com.gdx.rainbow.particles.*;
-import com.gdx.rainbow.particles.Particle;
-import net.dermetfan.gdx.assets.AnnotationAssetManager;
-import net.dermetfan.gdx.graphics.g2d.Box2DSprite;
 import com.badlogic.gdx.utils.viewport.Viewport;
-import com.badlogic.gdx.utils.viewport.FillViewport;
 
 
 import java.util.ArrayList;
@@ -38,7 +33,7 @@ public class GameScreen extends ScreenAdapter implements InputProcessor {
     public static float ELAPSED_TIME = 0;
 
     public World world;
-    public ArrayList<Object> objects;
+    public ArrayList<Object> objects, removedObjects;
     public ArrayList<Cloud> sunClouds;
     Player player;
     Sunbeam sunBeam;
@@ -67,20 +62,14 @@ public class GameScreen extends ScreenAdapter implements InputProcessor {
         this.game = game;
         Gdx.input.setInputProcessor(this);
         mouseLocation = new Vector2();
-        //guiCam = new OrthographicCamera(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
         guiCam = new OrthographicCamera();
-        //viewport = new FillViewport(Gdx.graphics.getWidth(), Gdx.graphics.getHeight(), guiCam);
-        //RECENT ONE BELOW
-        //viewport = new FillViewport(Gdx.graphics.getWidth(), Gdx.graphics.getHeight(), guiCam);
         viewport = new FillViewport(UNIT_WIDTH, UNIT_HEIGHT, guiCam);
 
-        //viewport = new FillViewport(50, 50, guiCam);
-        //viewport.project(new Vector2(2, 2));
         viewport.apply();
 
         guiCam.position.set(0, 0, 0);
 
-        //guiCam.zoom = 5;
+        //guiCam.zoom = 2;
 
         //UNIT_WIDTH *= guiCam.zoom;
         //UNIT_HEIGHT *= guiCam.zoom;
@@ -88,6 +77,7 @@ public class GameScreen extends ScreenAdapter implements InputProcessor {
         world = new World(new Vector2(0, 0), true);
 
         objects = new ArrayList<Object>();
+        removedObjects = new ArrayList<Object>();
         sunClouds = new ArrayList<Cloud>();
 
         player = (Player) Object.createObject(Object.PLAYER);
@@ -134,11 +124,12 @@ public class GameScreen extends ScreenAdapter implements InputProcessor {
         if (inputHeld && focusedCloud == null) this.movePlayerTowards(mouseLocation);
         if (focusedCloud != null) this.pushCloudAwayFromPlayer(focusedCloud);
         if (focusedCloud != null) if (player.body.getPosition().dst(focusedCloud.body.getPosition()) > PLAYER_PUSH_RANGE) focusedCloud = null;
+        if (focusedCloud != null) if (!focusedCloud.body.getFixtureList().first().testPoint(mouseLocation)) focusedCloud = null;
         this.handleSunbeam(delta);
         this.handleClouds(delta);
 
         //nextBeamLocation = player.body.getPosition().x;
-        //System.out.println(objects.size());
+        //System.out.println("Objects: " + objects.size() + " Objects Removed This Frame: " + removedObjects.size());
         //rainParticles.update(delta);
 
         for (Object o: objects) {
@@ -146,9 +137,15 @@ public class GameScreen extends ScreenAdapter implements InputProcessor {
 
             if (o instanceof Cloud) {
 
-                if (o.body.getPosition().x < -GameScreen.UNIT_WIDTH/2 || o.body.getPosition().x > GameScreen.UNIT_WIDTH/2 ||
-                        o.body.getPosition().y < -GameScreen.UNIT_HEIGHT/2 || o.body.getPosition().y > GameScreen.UNIT_HEIGHT/2) {
-                        //o.removed = true;
+                ((Cloud) o).justSpawned -= delta;
+                if (((Cloud) o).justSpawned < 0) ((Cloud) o).justSpawned = 0;
+
+                if (((Cloud) o).justSpawned == 0) {
+                    float adjst = 1.55f;
+                    if (o.body.getPosition().x + Cloud.WIDTH  * adjst * Assets.CLOUD_IMAGE_SCALE/ 2 < -GameScreen.UNIT_WIDTH / 2 || o.body.getPosition().x - Cloud.WIDTH * adjst * Assets.CLOUD_IMAGE_SCALE/ 2 > GameScreen.UNIT_WIDTH / 2 ||
+                            o.body.getPosition().y + Cloud.HEIGHT * adjst * Assets.CLOUD_IMAGE_SCALE/ 2 < -GameScreen.UNIT_HEIGHT / 2 || o.body.getPosition().y - Cloud.HEIGHT * adjst * Assets.CLOUD_IMAGE_SCALE/ 2 > GameScreen.UNIT_HEIGHT / 2) {
+                        removedObjects.add(o);
+                    }
                 }
 
                 if (sunClouds.contains(o)) {
@@ -173,6 +170,14 @@ public class GameScreen extends ScreenAdapter implements InputProcessor {
 
 
         }
+
+        for (Object o: removedObjects) {
+            if (objects.contains(o)) {
+                objects.remove(o);
+            }
+        }
+
+        removedObjects.clear();
 
     }
 
@@ -213,6 +218,7 @@ public class GameScreen extends ScreenAdapter implements InputProcessor {
         if (beamTimer >= nextBeamTime) {
             beamTimer = 0;
             nextBeamLocation = MathUtils.random(-GameScreen.UNIT_WIDTH/2 + GameScreen.UNIT_WIDTH/4, GameScreen.UNIT_WIDTH/2 - GameScreen.UNIT_WIDTH/4);
+            sunBeam.typeOfMovement = MathUtils.randomBoolean();
             //nextBeamLocation = MyGdxGame.WIDTH/2;
             //System.out.println(nextBeamLocation);
         }
@@ -231,7 +237,9 @@ public class GameScreen extends ScreenAdapter implements InputProcessor {
         Vector2 dragForce = new Vector2(0, 0);
         Vector2 v = o.body.getLinearVelocity();
         dragForce.set(-v.x, -v.y);
-        dragForce.scl(.32f);
+        //dragForce.scl(.32f);
+        if (o instanceof Player) dragForce.scl(.16f);
+        if (o instanceof Cloud) dragForce.scl(.10f);
         o.body.applyForce(dragForce, o.body.getPosition(), true);
     }
 
@@ -244,9 +252,19 @@ public class GameScreen extends ScreenAdapter implements InputProcessor {
 
         game.batcher.begin();
         game.batcher.draw(Assets.background_image, -(UNIT_WIDTH)/2, -(UNIT_HEIGHT)/2, UNIT_WIDTH, UNIT_HEIGHT);
+        float playerSclOff = .1f *(MathUtils.sin(GameScreen.ELAPSED_TIME * 1.25f));
+
+        Assets.player_image.setScale(1 +  playerSclOff);
         for (Object o: objects) {
             if (o instanceof Player) Assets.player_image.draw(game.batcher, o.body);
-            if (o instanceof Cloud) Assets.cloud_image.draw(game.batcher, o.body);
+            Assets.cloud_image.setAlpha(.8f);
+            if (o instanceof Cloud) {
+                if (o instanceof Cloud) ((Cloud) o).drawRainbow(game.batcher);
+                float cloudYOff = .07f * (MathUtils.sin(GameScreen.ELAPSED_TIME  + o.timerOffset * .85f));
+                Assets.cloud_image.draw(game.batcher, o.body.getPosition().x, o.body.getPosition().y + cloudYOff, Cloud.WIDTH * Assets.CLOUD_IMAGE_SCALE, Cloud.HEIGHT * Assets.CLOUD_IMAGE_SCALE, 0);
+            }
+            game.batcher.setColor(1, 1, 1, 1);
+            Assets.cloud_image.setScale(Assets.CLOUD_IMAGE_SCALE + .05f *(MathUtils.sin((GameScreen.ELAPSED_TIME + o.timerOffset) * 1.25f)));
         }
 
         game.batcher.end();
@@ -259,6 +277,8 @@ public class GameScreen extends ScreenAdapter implements InputProcessor {
         //sr.line(MyGdxGame.WIDTH/2 + player.body.getPosition().x, MyGdxGame.HEIGHT/2 + player.body.getPosition().y, MyGdxGame.WIDTH/2 + mouseLocation.x, MyGdxGame.HEIGHT/2 + mouseLocation.y);
         //box.setAsBox(.768f * .98f, .356f * .98f);
         sr.setColor(Color.ORANGE);
+
+        /*
         for (Object o: objects) {
           if (o instanceof Cloud) {
               if (focusedCloud == o) sr.setColor(Color.GREEN);
@@ -273,7 +293,7 @@ public class GameScreen extends ScreenAdapter implements InputProcessor {
               sr.line(x + width/2, y - height/2, x - width/2, y - height/2);
           }
         }
-
+        */
         rainParticles.drawParticles(sr);
         sr.end();
 
@@ -289,6 +309,8 @@ public class GameScreen extends ScreenAdapter implements InputProcessor {
             c.drawTimer(game.batcher);
         }
         game.batcher.end();
+
+
     }
 
     @Override

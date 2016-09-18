@@ -1,5 +1,6 @@
 package com.gdx.rainbow.objects;
 
+import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.physics.box2d.*;
 import com.badlogic.gdx.physics.box2d.BodyDef.BodyType;
 import com.gdx.rainbow.Assets;
@@ -13,20 +14,21 @@ public class Object {
 
     public static final int PLAYER = 0, CLOUD = 1;
 
-    public boolean removed = false;
-
     //Collision Filters
     public static final short CATEGORY_PLAYER = 0x0001;
     public static final short CATEGORY_CLOUD = 0x0002;
 
     public static final short MASK_PLAYER = -1;
-    public static final short MASK_CLOUD = CATEGORY_CLOUD;
+    public static final short MASK_CLOUD = -8;
+    //if you want clouds to collide with eachother set MASK_CLOUD to CATEGORY_CLOUD;
 
     public Body body;
 
     protected Fixture fixture;
     protected BodyDef bodyDef;
     protected FixtureDef fixtureDef;
+
+    public float timerOffset;
 
     public static Object createObject(int ID) {
         switch (ID) {
@@ -39,6 +41,7 @@ public class Object {
     public Object() {
         bodyDef = new BodyDef();
         fixtureDef = new FixtureDef();
+        timerOffset = MathUtils.random(10f);
     }
 
     public void set(GameScreen gameScreen, float x, float y) {

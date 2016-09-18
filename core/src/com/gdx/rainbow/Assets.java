@@ -13,9 +13,12 @@ import net.dermetfan.gdx.graphics.g2d.Box2DSprite;
  */
 public class Assets {
 
+    public static final float CLOUD_IMAGE_SCALE = 1.65f;
+
     public static Texture background_image;
     public static Texture sun_timer_image;
     public static Texture sun_timer_tick_image;
+    public static Texture rainbow_band_image;
     public static Box2DSprite player_image;
     public static Box2DSprite cloud_image;
 
@@ -30,11 +33,12 @@ public class Assets {
 
     public static void load() {
         background_image = loadTexture("data/background.png");
-        sun_timer_image = loadTexture("data/sun_timer.png");
-        sun_timer_tick_image = loadTexture("data/sun_tick.png");
+        sun_timer_image = loadTexture("data/sun_timer_two.png");
+        sun_timer_tick_image = loadTexture("data/sun_tick_four.png");
+        rainbow_band_image = loadTexture("data/rainbow_band_two.png");
         player_image = loadBox2DSprite("data/player.png");
         cloud_image = loadBox2DSprite("data/cloudthree.png");
-        cloud_image.setScale(1.25f);
+        cloud_image.setScale(CLOUD_IMAGE_SCALE);
     }
 
     public static void playSound (Sound sound) {
