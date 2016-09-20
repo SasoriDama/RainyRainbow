@@ -28,6 +28,8 @@ public class Object {
     protected BodyDef bodyDef;
     protected FixtureDef fixtureDef;
 
+   private Box2DSprite sprite;
+
     public float timerOffset;
 
     public static Object createObject(int ID) {
@@ -67,7 +69,12 @@ public class Object {
         bodyDef.position.set(x, y);
     }
 
-    protected void setSprite(Box2DSprite sprite) {
+    public Box2DSprite getSprite() {
+        return sprite;
+    }
+
+    public void setSprite(Box2DSprite sprite) {
+        this.sprite = sprite;
         fixture.setUserData(sprite);
         body.setUserData(sprite);
     }

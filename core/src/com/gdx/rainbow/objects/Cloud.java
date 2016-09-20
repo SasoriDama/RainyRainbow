@@ -25,8 +25,6 @@ public class Cloud extends Object {
     public static final float WIDTH = .768f * .85f;
     public static final float HEIGHT = .356f * .85f;
 
-    public static Color[] RAINBOW_COLORS = new Color[9];
-
     public Cloud() {
         super();
     }
@@ -43,7 +41,7 @@ public class Cloud extends Object {
 
         float sunSize = .30f;
         float sunTickSize = .0016f;
-        float sunScale = .8f + (.3f * Math.abs(MathUtils.sin(GameScreen.ELAPSED_TIME *.9f)));
+        float sunScale = .8f + ((.3f + (sunTimer * .01f)) * Math.abs(MathUtils.sin(GameScreen.ELAPSED_TIME *.9f)));
         float sunX =  body.getPosition().x - sunSize*sunScale/2;
         float sunY = body.getPosition().y - sunSize*sunScale/2;
         float initialAngleOffsetInDegrees = 36;
@@ -84,59 +82,12 @@ public class Cloud extends Object {
                 ((sunTimer/1)/GameScreen.CLOUD_WIN_TIME) * 360);
     }
 
-    public void drawRainbow(SpriteBatch batch) {
+    public void drawRainbow(SpriteBatch batch, float amt) {
 
         TextureRegion t = new TextureRegion(Assets.rainbow_band_image);
         float tWidth = t.getRegionWidth();
         float tHeight = t.getRegionHeight();
 
-        float x = body.getPosition().x - t.getRegionWidth()/2;
-        float y = body.getPosition().y - t.getRegionHeight()/2;
-
-        /*
-        //float rainbowWidth = 10;
-        int numOfRainbowBands = 8;
-        float xScale = .008f;
-        float yScale = .05f;
-        int numOfLerpsInBand = 5;
-        //float rainbowBandWidth = rainbowWidth/numOfRainbowBands;
-        //float lerpBandWidth = rainbowBandWidth/numOfLerpsInBand;
-
-        Color redStart = createColor(0, 255, 100, 90);
-        Color red = createColor(1, 250, 80, 80);
-        Color orange = createColor(2, 255, 204, 102);
-        Color yellow = createColor(3, 255, 255, 204);
-        Color green = createColor(4, 153, 255, 153);
-        Color cyan = createColor(5, 102, 245, 245);
-        Color blue = createColor(6, 51, 153, 255);
-        Color purple = createColor(7, 98, 102, 255);
-        Color purpleEnd = createColor(8, 75, 0, 150);
-
-        for (int i = 0; i < numOfRainbowBands; i ++) {
-
-            Color c1 = RAINBOW_COLORS[i];
-            Color c2;
-            c2 = RAINBOW_COLORS[i + 1];
-
-            //if (i != 0) continue;
-
-            float percentBand = (float)i/numOfRainbowBands;
-
-            for (int j = 0; j < numOfLerpsInBand; j++) {
-                float percentLerp = (float)j/numOfLerpsInBand;
-                System.out.println(percentBand);
-                batch.setColor(lerpColor(c1, c2, percentLerp));
-
-                x += (percentBand * numOfRainbowBands * .1f * xScale) + (percentLerp * .14f * tWidth * xScale);
-
-                float width =  numOfRainbowBands * numOfLerpsInBand * (numOfRainbowBands * .1f * xScale + .14f * tWidth * xScale);
-
-                batch.draw(t, x - width/4, y - yScale*tHeight/2, tWidth/2, tHeight/2, tWidth, tHeight, xScale, yScale, 90);
-            }
-                batch.setColor(1, 1, 1, 1);
-        }
-
-        */
         float xScale = .0002f;
         float yScale = .0025f;
 
@@ -147,23 +98,49 @@ public class Cloud extends Object {
         float tempX = body.getPosition().x - centerX;
         float tempY = body.getPosition().y - centerY;
 
-        float radius = (float) Math.sqrt(tempX * tempX + tempY * tempY);
+        float eccentricity = 1.3f;
+        float transparency = .45f;
+
         //dist from cloud to bottom center
+        float radius = (float) Math.sqrt(tempX * tempX + tempY * tempY);
+
+        //float aSqrd = (radius * eccentricity) * (radius * eccentricity);
+        //float bSqrd = (radius * radius);
+        //float circumference = (float) (MathUtils.PI2 * Math.sqrt( ((aSqrd) + (bSqrd))/2 ));
         float circumference = MathUtils.PI * 2 * radius;
-        //Only have of circumference
-        float resolution = circumference  * .5f/(t.getRegionWidth() * xScale);
+
+
+        float percentOfCircle = .5f;
+        percentOfCircle = .15f;
+        percentOfCircle *= amt;
+        float resolution = circumference  * percentOfCircle/(t.getRegionWidth() * xScale);
         resolution *= 2f;
 
-        for (int i = 0; i < resolution; i ++) {
-            x = centerX - tWidth/2;
-            y = centerY - tHeight/2;
+        Vector2 pos = new Vector2(body.getPosition().x - centerX, body.getPosition().y - centerY);
+        pos.nor();
+        Vector2 axis = new Vector2(1, 0);
+        axis.nor();
+        //so it starts at cloud
+        float angleBetweenCloudAndXAxisInRadians = (float) Math.acos(pos.dot(axis));
+        float angleBetweenCloudAndXAxisInDegrees = angleBetweenCloudAndXAxisInRadians * 180/MathUtils.PI;
 
+
+        for (int i = 0; i < resolution; i ++) {
+            float x = centerX - tWidth/2;
+            float y = centerY - tHeight/2;
+
+            //try parabola
             float percent = (float) i/resolution;
 
-            x += radius * 1.5f * MathUtils.cos(percent * MathUtils.PI);
-            y +=  radius * MathUtils.sin(percent * MathUtils.PI);
-            batch.setColor(1, 1, 1, .6f);
-            batch.draw(t, x, y, tWidth/2, tHeight/2, tWidth, tHeight, xScale, yScale, percent * 180 - 90);
+            float dx1 = radius * eccentricity *  MathUtils.cos(angleBetweenCloudAndXAxisInRadians + (percent * MathUtils.PI * percentOfCircle));
+            float dy1 =  radius * MathUtils.sin(angleBetweenCloudAndXAxisInRadians + (percent * MathUtils.PI * percentOfCircle));
+
+            float dx2 = radius * eccentricity * MathUtils.cos(angleBetweenCloudAndXAxisInRadians - (percent * MathUtils.PI * percentOfCircle));
+            float dy2 =  radius * MathUtils.sin(angleBetweenCloudAndXAxisInRadians - (percent * MathUtils.PI * percentOfCircle));
+            //batch.setColor(1, 1, 1, .6f);
+            batch.setColor(1, 1, 1, transparency * (1 - percent));
+            batch.draw(t, x + dx1, y + dy1, tWidth/2, tHeight/2, tWidth, tHeight, xScale, yScale, percent * (180 * percentOfCircle) - (90 - angleBetweenCloudAndXAxisInDegrees));
+            batch.draw(t, x + dx2, y + dy2, tWidth/2, tHeight/2, tWidth, tHeight, xScale, yScale, -percent * (180 * percentOfCircle) - (90 - angleBetweenCloudAndXAxisInDegrees));
         }
         batch.draw(t, centerX, centerY, tWidth/2, tHeight/2, tWidth, tHeight, xScale, yScale, 0);
         batch.setColor(1, 1, 1, 1);
@@ -183,12 +160,6 @@ public class Cloud extends Object {
 
     private float lerp(float start, float end, float per) {
         return (end - start) * per;
-    }
-
-    private static Color createColor(int index, int r, int g, int b) {
-        Color c = new Color( (float)r/255, (float)g/255, (float)b/255, .75f);
-        RAINBOW_COLORS[index] = c;
-        return c;
     }
 
     protected void configBodyDef() {

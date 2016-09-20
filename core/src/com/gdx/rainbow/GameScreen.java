@@ -4,6 +4,7 @@ package com.gdx.rainbow;
 import com.badlogic.gdx.*;
 import com.badlogic.gdx.graphics.*;
 import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.g3d.particles.ResourceData;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.utils.viewport.FillViewport;
@@ -13,6 +14,7 @@ import com.badlogic.gdx.physics.box2d.*;
 import com.gdx.rainbow.objects.Object;
 import com.gdx.rainbow.particles.*;
 import com.badlogic.gdx.utils.viewport.Viewport;
+import net.dermetfan.gdx.graphics.g2d.AnimatedBox2DSprite;
 
 
 import java.util.ArrayList;
@@ -41,16 +43,21 @@ public class GameScreen extends ScreenAdapter implements InputProcessor {
 
     float nextBeamLocation = 0;
     float beamTimer = 0;
-    float nextBeamTime = 5;
+    float nextBeamTime = 2;//5;
 
     float cloudTimer = 0;
     float nextCloudTime = 5;
 
+    float wonTimer = 0;
+
     Vector2 mouseLocation;
     private boolean inputHeld = false;
     private Cloud focusedCloud = null;
+    private Cloud winCloud = null;
 
-    public static float CLOUD_WIN_TIME = 10;
+    public static float CLOUD_WIN_TIME = 2f;//10;
+    public static float RAINBOW_DRAW_TIME = 2;
+    public static float WON_TIME = RAINBOW_DRAW_TIME + 6;
 
     public final float PLAYER_PUSH_RANGE = 1.5f;
 
@@ -60,6 +67,7 @@ public class GameScreen extends ScreenAdapter implements InputProcessor {
     public GameScreen(MyGdxGame game) {
         //http://gamedev.stackexchange.com/questions/93816/libgdx-box2d-and-screen-viewport-scaling
         this.game = game;
+        sr = new ShapeRenderer();
         Gdx.input.setInputProcessor(this);
         mouseLocation = new Vector2();
         guiCam = new OrthographicCamera();
@@ -75,19 +83,13 @@ public class GameScreen extends ScreenAdapter implements InputProcessor {
         //UNIT_HEIGHT *= guiCam.zoom;
 
         world = new World(new Vector2(0, 0), true);
-
+        rainParticles = new ParticleSystem(.001f);
         objects = new ArrayList<Object>();
         removedObjects = new ArrayList<Object>();
         sunClouds = new ArrayList<Cloud>();
 
-        player = (Player) Object.createObject(Object.PLAYER);
-        player.set(this, 0, 0);
+        startLevel();
 
-        sunBeam = new Sunbeam();
-
-        sr = new ShapeRenderer();
-
-        rainParticles = new ParticleSystem(.01f);
 
         Cloud c = (Cloud) Object.createObject(Object.CLOUD);
         c.set(this, 0, 0, new Vector2(0, 0));
@@ -130,7 +132,20 @@ public class GameScreen extends ScreenAdapter implements InputProcessor {
 
         //nextBeamLocation = player.body.getPosition().x;
         //System.out.println("Objects: " + objects.size() + " Objects Removed This Frame: " + removedObjects.size());
-        //rainParticles.update(delta);
+        rainParticles.update(delta);
+
+        if (wonTimer >= WON_TIME) {
+            startLevel();
+        }
+
+        //player animations
+        if (focusedCloud != null) {
+            player.setSprite(Assets.player_blowing_animation);
+            if (focusedCloud.body.getPosition().x < player.body.getPosition().x) player.getSprite().setFlip(true, false);
+        }
+        else if (wonTimer/WON_TIME >= .3f) player.setSprite(Assets.player_win_animation);
+        else player.setSprite(Assets.player_image);
+
 
         for (Object o: objects) {
             applyDragForce(o);
@@ -150,10 +165,10 @@ public class GameScreen extends ScreenAdapter implements InputProcessor {
 
                 if (sunClouds.contains(o)) {
                     //Multiply delta * sunClouds.size ??? this will make the timer go up faster for each cloud in sunbeam
-                    //System.out.println(sunClouds.size() + " timer: " + ((Cloud) o).sunTimer);
                     ((Cloud) o).sunTimer += (delta);
                     if (((Cloud) o).sunTimer >= GameScreen.CLOUD_WIN_TIME) {
                         ((Cloud) o).sunTimer = GameScreen.CLOUD_WIN_TIME;
+                        this.winLevel(((Cloud) o), delta);
                     }
                 }
 
@@ -162,6 +177,8 @@ public class GameScreen extends ScreenAdapter implements InputProcessor {
                 }
                 else if (!sunBeam.contains(o.body)){
                     if (sunClouds.contains(o)) {
+                        //System.out.println("disabled removal of sunclouds");
+                        if (o == winCloud) continue;
                         ((Cloud) o).sunTimer = 0;
                         sunClouds.remove(o);
                     }
@@ -181,6 +198,27 @@ public class GameScreen extends ScreenAdapter implements InputProcessor {
 
     }
 
+    private void winLevel(Cloud c, float delta) {
+        if (wonTimer >= WON_TIME) return;
+        wonTimer += delta;
+        if (winCloud == null) winCloud = c;
+    }
+
+    private void startLevel() {
+        wonTimer = 0;
+        beamTimer = 0;
+        cloudTimer = 0;
+        winCloud = null;
+        focusedCloud = null;
+        sunBeam = new Sunbeam();
+        removedObjects.addAll(objects);
+        objects.clear();
+        sunClouds.clear();
+        Assets.player_win_animation.setTime(0);
+        player = (Player) Object.createObject(Object.PLAYER);
+        player.set(this, .5f, .5f);
+    }
+
     private void movePlayerTowards(Vector2 endLocation) {
         Vector2 force = new Vector2(0, 0);
         Vector2 startLocation = player.body.getPosition();
@@ -188,7 +226,8 @@ public class GameScreen extends ScreenAdapter implements InputProcessor {
         force.set(endLocation.x - startLocation.x, endLocation.y - startLocation.y);
         force.nor();
         //force.scl(.030f);
-        force.scl(.015f);
+        //force.scl(.015f);
+        force.scl(.010f);
         //player.body.applyForce(force, player.body.getPosition(), true);
         player.body.applyLinearImpulse(force, player.body.getPosition(), true);
         //System.out.println(player.body.getLinearVelocity().len());
@@ -219,8 +258,6 @@ public class GameScreen extends ScreenAdapter implements InputProcessor {
             beamTimer = 0;
             nextBeamLocation = MathUtils.random(-GameScreen.UNIT_WIDTH/2 + GameScreen.UNIT_WIDTH/4, GameScreen.UNIT_WIDTH/2 - GameScreen.UNIT_WIDTH/4);
             sunBeam.typeOfMovement = MathUtils.randomBoolean();
-            //nextBeamLocation = MyGdxGame.WIDTH/2;
-            //System.out.println(nextBeamLocation);
         }
         sunBeam.update(nextBeamLocation, delta);
     }
@@ -229,7 +266,7 @@ public class GameScreen extends ScreenAdapter implements InputProcessor {
         this.cloudTimer += delta;
         if (cloudTimer >= nextCloudTime) {
             cloudTimer = 0;
-            //this.spawnCloud();
+            this.spawnCloud();
         }
     }
 
@@ -238,7 +275,7 @@ public class GameScreen extends ScreenAdapter implements InputProcessor {
         Vector2 v = o.body.getLinearVelocity();
         dragForce.set(-v.x, -v.y);
         //dragForce.scl(.32f);
-        if (o instanceof Player) dragForce.scl(.16f);
+        if (o instanceof Player) dragForce.scl(.25f);
         if (o instanceof Cloud) dragForce.scl(.10f);
         o.body.applyForce(dragForce, o.body.getPosition(), true);
     }
@@ -254,12 +291,20 @@ public class GameScreen extends ScreenAdapter implements InputProcessor {
         game.batcher.draw(Assets.background_image, -(UNIT_WIDTH)/2, -(UNIT_HEIGHT)/2, UNIT_WIDTH, UNIT_HEIGHT);
         float playerSclOff = .1f *(MathUtils.sin(GameScreen.ELAPSED_TIME * 1.25f));
 
-        Assets.player_image.setScale(1 +  playerSclOff);
+        //repeat animation
+        if (player.getSprite() instanceof AnimatedBox2DSprite) {
+            AnimatedBox2DSprite a = ((AnimatedBox2DSprite) player.getSprite());
+            if (a == Assets.player_blowing_animation) {
+                if (a.isAnimationFinished()) a.setTime(0);
+            }
+        }
+
+        player.getSprite().setScale(1 +  playerSclOff);
         for (Object o: objects) {
-            if (o instanceof Player) Assets.player_image.draw(game.batcher, o.body);
-            Assets.cloud_image.setAlpha(.8f);
+            if (o instanceof Player) player.getSprite().draw(game.batcher, o.body);
+            Assets.cloud_image.setAlpha(.80f);
             if (o instanceof Cloud) {
-                if (o instanceof Cloud) ((Cloud) o).drawRainbow(game.batcher);
+                if (o == winCloud) winCloud.drawRainbow(game.batcher, (wonTimer/RAINBOW_DRAW_TIME));
                 float cloudYOff = .07f * (MathUtils.sin(GameScreen.ELAPSED_TIME  + o.timerOffset * .85f));
                 Assets.cloud_image.draw(game.batcher, o.body.getPosition().x, o.body.getPosition().y + cloudYOff, Cloud.WIDTH * Assets.CLOUD_IMAGE_SCALE, Cloud.HEIGHT * Assets.CLOUD_IMAGE_SCALE, 0);
             }
@@ -267,15 +312,16 @@ public class GameScreen extends ScreenAdapter implements InputProcessor {
             Assets.cloud_image.setScale(Assets.CLOUD_IMAGE_SCALE + .05f *(MathUtils.sin((GameScreen.ELAPSED_TIME + o.timerOffset) * 1.25f)));
         }
 
+
+        sunBeam.drawThree(game.batcher);
         game.batcher.end();
 
         sr.setProjectionMatrix(guiCam.combined);
 
         sr.begin(ShapeRenderer.ShapeType.Line);
-        sunBeam.draw(sr);
+        //sunBeam.draw(sr);
+        sunBeam.drawBounds(sr);
         sr.setColor(Color.BLACK);
-        //sr.line(MyGdxGame.WIDTH/2 + player.body.getPosition().x, MyGdxGame.HEIGHT/2 + player.body.getPosition().y, MyGdxGame.WIDTH/2 + mouseLocation.x, MyGdxGame.HEIGHT/2 + mouseLocation.y);
-        //box.setAsBox(.768f * .98f, .356f * .98f);
         sr.setColor(Color.ORANGE);
 
         /*
@@ -297,13 +343,7 @@ public class GameScreen extends ScreenAdapter implements InputProcessor {
         rainParticles.drawParticles(sr);
         sr.end();
 
-        //box.setAsBox(256/5, 256/5);
-       // sr.line(MyGdxGame.WIDTH/2 + player.body.getPosition().x - 256/20, MyGdxGame.HEIGHT/2 + player.body.getPosition().y - 256/20, MyGdxGame.WIDTH/2 + player.body.getPosition().x + 256/20, MyGdxGame.HEIGHT/2 + player.body.getPosition().y + 256/20);
-        //for (Object o: objects) {
-         //   if (o instanceof Cloud) {
-                //sr.line(MyGdxGame.WIDTH/2 + o.body.getPosition().x - 768/16, MyGdxGame.HEIGHT/2 + o.body.getPosition().y - 356/16, MyGdxGame.WIDTH/2 + o.body.getPosition().x + 768/16, MyGdxGame.HEIGHT/2 + o.body.getPosition().y + 356/16);
-         //   }
-        //}
+
         game.batcher.begin();
         for (Cloud c: sunClouds) {
             c.drawTimer(game.batcher);

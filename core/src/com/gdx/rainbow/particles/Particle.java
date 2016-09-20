@@ -10,7 +10,8 @@ import com.gdx.rainbow.MyGdxGame;
  */
 public class Particle {
 
-    private Vector2 position, velocity, acceleration;
+    public Vector2 position, velocity, acceleration;
+    public float size = .3f;
 
     public Particle(Vector2 position, Vector2 velocity, Vector2 acceleration) {
         this.position = position;
@@ -29,6 +30,6 @@ public class Particle {
     }
 
     public void draw(ShapeRenderer sr) {
-        sr.line(position.x, position.y, position.x + 10, position.y - 75);
+        sr.line(position.x, position.y, position.x + .02f, position.y - size);
     }
 }

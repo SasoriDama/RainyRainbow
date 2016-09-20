@@ -11,7 +11,7 @@ import com.gdx.rainbow.GameScreen;
  */
 public class Player extends Object {
 
-    public static final float SIZE = .2f;
+    public static final float SIZE = .25f;//.2f
 
     public Player() {
         super();
