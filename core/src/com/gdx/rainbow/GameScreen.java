@@ -43,7 +43,7 @@ public class GameScreen extends ScreenAdapter implements InputProcessor {
 
     float nextBeamLocation = 0;
     float beamTimer = 0;
-    float nextBeamTime = 2;//5;
+    float nextBeamTime = 5;
 
     float cloudTimer = 0;
     float nextCloudTime = 5;
@@ -130,7 +130,6 @@ public class GameScreen extends ScreenAdapter implements InputProcessor {
         this.handleSunbeam(delta);
         this.handleClouds(delta);
 
-        //nextBeamLocation = player.body.getPosition().x;
         //System.out.println("Objects: " + objects.size() + " Objects Removed This Frame: " + removedObjects.size());
         rainParticles.update(delta);
 
@@ -256,7 +255,7 @@ public class GameScreen extends ScreenAdapter implements InputProcessor {
         this.beamTimer += delta;
         if (beamTimer >= nextBeamTime) {
             beamTimer = 0;
-            nextBeamLocation = MathUtils.random(-GameScreen.UNIT_WIDTH/2 + GameScreen.UNIT_WIDTH/4, GameScreen.UNIT_WIDTH/2 - GameScreen.UNIT_WIDTH/4);
+            if (sunBeam.readyForNextLocation()) nextBeamLocation = MathUtils.random(-GameScreen.UNIT_WIDTH/2 + GameScreen.UNIT_WIDTH/4, GameScreen.UNIT_WIDTH/2 - GameScreen.UNIT_WIDTH/4);
             sunBeam.typeOfMovement = MathUtils.randomBoolean();
         }
         sunBeam.update(nextBeamLocation, delta);
@@ -313,14 +312,14 @@ public class GameScreen extends ScreenAdapter implements InputProcessor {
         }
 
 
-        sunBeam.drawThree(game.batcher);
+        sunBeam.draw(game.batcher);
         game.batcher.end();
 
         sr.setProjectionMatrix(guiCam.combined);
 
         sr.begin(ShapeRenderer.ShapeType.Line);
         //sunBeam.draw(sr);
-        sunBeam.drawBounds(sr);
+        //sunBeam.drawBounds(sr);
         sr.setColor(Color.BLACK);
         sr.setColor(Color.ORANGE);
 
@@ -446,6 +445,8 @@ public class GameScreen extends ScreenAdapter implements InputProcessor {
         float pixX = (screenX - MyGdxGame.WIDTH/2);
         float pixY = (-(screenY - MyGdxGame.HEIGHT/2));
         mouseLocation.set(pixX/256.00f, pixY/256.00f);
+
+        //nextBeamLocation = mouseLocation.x;
 
         for (Object o: objects) {
             if (o instanceof Cloud) {
