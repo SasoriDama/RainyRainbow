@@ -44,6 +44,7 @@ public class Cloud extends Object {
         float sunScale = .8f + ((.3f + (sunTimer * .01f)) * Math.abs(MathUtils.sin(GameScreen.ELAPSED_TIME *.9f)));
         float sunX =  body.getPosition().x - sunSize*sunScale/2;
         float sunY = body.getPosition().y - sunSize*sunScale/2;
+        float yOff = .1f;
         float initialAngleOffsetInDegrees = 36;
 
         Color c1 = new Color((float)255/255, (float)120/255, (float)60/255, 1);
@@ -74,11 +75,11 @@ public class Cloud extends Object {
             scl *= .65f * (Math.abs(Math.sin(GameScreen.ELAPSED_TIME + i * 10.4f)) + 2.3);
             if (i % 2 == 0) batch.setColor(c2);
             else batch.setColor(c1);
-            batch.draw(t, x, y, t.getRegionWidth()/2, t.getRegionHeight()/2, t.getRegionWidth(), t.getRegionHeight(), sunTickSize * scl, sunTickSize * scl, per * 360 - 90 - initialAngleOffsetInDegrees);
+            batch.draw(t, x, y + yOff, t.getRegionWidth()/2, t.getRegionHeight()/2, t.getRegionWidth(), t.getRegionHeight(), sunTickSize * scl, sunTickSize * scl, per * 360 - 90 - initialAngleOffsetInDegrees);
             batch.setColor(1, 1, 1, 1);
         }
 
-        batch.draw(r,  body.getPosition().x -r.getRegionWidth()/2,  body.getPosition().y -r.getRegionHeight()/2, r.getRegionWidth()/2, r.getRegionHeight()/2, r.getRegionWidth(), r.getRegionHeight(), sunSize * sunScale * .0045f, sunSize * sunScale * .0045f,
+        batch.draw(r,  body.getPosition().x -r.getRegionWidth()/2,  body.getPosition().y -r.getRegionHeight()/2 + yOff, r.getRegionWidth()/2, r.getRegionHeight()/2, r.getRegionWidth(), r.getRegionHeight(), sunSize * sunScale * .0045f, sunSize * sunScale * .0045f,
                 ((sunTimer/1)/GameScreen.CLOUD_WIN_TIME) * 360);
     }
 

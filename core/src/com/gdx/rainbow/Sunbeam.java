@@ -112,12 +112,13 @@ public class Sunbeam {
             float dir = 1;
             if (xCenterBottom - xDest > 0) dir = -1;
             if (dTheta > .01f) angleToXDestInDegrees += dir * dTheta;
-            System.out.println(angleToXDestInDegrees);
+            //System.out.println(angleToXDestInDegrees);
         } else pushBeam(dx, delta);
 
     }
 
     public void draw(SpriteBatch batch) {
+
         TextureRegion t = new TextureRegion(Assets.sun_beam_band_image);
         float tWidth = t.getRegionWidth();
         float tHeight = t.getRegionHeight();
@@ -125,13 +126,29 @@ public class Sunbeam {
         float yScale = .08f;
         float x = xCenterTop;
         float y= GameScreen.UNIT_HEIGHT/2 + .2f;
-        float a = .6f;
+        float a = .25f + .1f * MathUtils.sin((GameScreen.ELAPSED_TIME + MathUtils.PI)/3) + .05f * (MathUtils.sin(GameScreen.ELAPSED_TIME));
+        if (a < 0) a = 0;
 
-        batch.setColor(1, 1, .79f, a);
-
+        batch.setColor(1, 1, .89f, a);
         batch.draw(t, x -tWidth/2, y -tHeight/2 * 2f, tWidth/2, 2f * tHeight/2, tWidth, tHeight, xScale, yScale, angleToXDestInDegrees);
-
         batch.setColor(1, 1, 1, 1);
+
+        float timerDesyncValues[] = {5, 3, 7, 1};
+        int numOfExtraBeams = 4;
+
+        //add more glimmer
+        for (int i = 0; i < numOfExtraBeams; i++) {
+            float aa = a - .45f + (.2f * MathUtils.sin((GameScreen.ELAPSED_TIME + timerDesyncValues[i])/2)) + (.075f * MathUtils.sin((GameScreen.ELAPSED_TIME + timerDesyncValues[i]) * 3));
+            if (aa < .15f) aa = .15f;
+
+            float dir = 1;
+            if (i % 2 != 0) dir = -1;
+
+            batch.setColor(.9f, 1, .49f, aa);
+            batch.draw(t, x -tWidth/2 + dir * i * (.14f + (.05f * MathUtils.sin((GameScreen.ELAPSED_TIME + timerDesyncValues[i])/2))), y -tHeight/2 * 2f, tWidth/2, 2f * tHeight/2, tWidth, tHeight, xScale * .65f, yScale, angleToXDestInDegrees + dir * i * (1.5f));
+            batch.setColor(1, 1, 1, 1);
+        }
+
     }
 
 
