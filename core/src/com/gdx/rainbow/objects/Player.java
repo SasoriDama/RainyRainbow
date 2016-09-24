@@ -34,8 +34,8 @@ public class Player extends Object {
         box.setAsBox(SIZE, SIZE);
 
         fixtureDef.shape = box;
-        //fixtureDef.density = .05f;
-        fixtureDef.density = 1;
+        //fixtureDef.density = 1f;
+        fixtureDef.density = .5f;
         fixtureDef.friction = .4f;
         fixtureDef.restitution = .8f;
         fixtureDef.filter.categoryBits = Object.CATEGORY_PLAYER;

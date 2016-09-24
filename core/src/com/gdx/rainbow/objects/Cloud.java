@@ -17,13 +17,19 @@ import com.gdx.rainbow.GameScreen;
 public class Cloud extends Object {
 
     public float sunTimer = 0;
-    public float justSpawned = 1;
+    private float justSpawned = 1;
 
     //public static final float WIDTH = .768f * .98f;
     //public static final float HEIGHT = .356f * .98f;
 
     public static final float WIDTH = .768f * .85f;
     public static final float HEIGHT = .356f * .85f;
+
+    public float pushedTimer = 0;
+    public static final float PUSH_TIME = .75f;
+
+    //suntimer rotation
+    float rot = 0;
 
     public Cloud() {
         super();
@@ -37,7 +43,37 @@ public class Cloud extends Object {
         body.setLinearVelocity(initialVel);
     }
 
-    public void drawTimer(SpriteBatch batch) {
+    public void resetPushedTimer(float delta) {
+        if (pushedTimer > 0) pushedTimer -= .4f * delta;
+        if (pushedTimer < 0) pushedTimer = 0;
+    }
+
+    public void handleJustSpawnedTimer(float delta) {
+        if (justSpawned == 0) return;
+        if (justSpawned > 0) justSpawned -= delta;
+        if (justSpawned < 0) justSpawned = 0;
+    }
+
+    public void handleSunTimer(float delta) {
+        sunTimer += (delta);
+        if (sunTimer >= GameScreen.WIN_TIME) sunTimer = GameScreen.WIN_TIME;
+    }
+
+    public float getWinPercent() {
+        return (sunTimer/GameScreen.WIN_TIME);
+    }
+
+    public boolean justSpawned() {
+        return justSpawned > 0;
+    }
+
+    public boolean offScreen() {
+        float adjst = 1.55f;
+        return (body.getPosition().x + Cloud.WIDTH  * adjst * Assets.CLOUD_IMAGE_SCALE/ 2 < -GameScreen.UNIT_WIDTH / 2 || body.getPosition().x - Cloud.WIDTH * adjst * Assets.CLOUD_IMAGE_SCALE/ 2 > GameScreen.UNIT_WIDTH / 2 ||
+                body.getPosition().y + Cloud.HEIGHT * adjst * Assets.CLOUD_IMAGE_SCALE/ 2 < -GameScreen.UNIT_HEIGHT / 2 || body.getPosition().y - Cloud.HEIGHT * adjst * Assets.CLOUD_IMAGE_SCALE/ 2 > GameScreen.UNIT_HEIGHT / 2);
+    }
+
+    public void drawTimer(SpriteBatch batch, float nextXDest) {
 
         float sunSize = .30f;
         float sunTickSize = .0016f;
@@ -58,7 +94,8 @@ public class Cloud extends Object {
         for (int i = 0; i < numOfTicks; i++) {
 
             float per = ((float) i/numOfTicks);
-            if (per > (sunTimer/GameScreen.CLOUD_WIN_TIME)) continue;
+            //draw only up to the win percentage
+            if (per > (this.getWinPercent())) continue;
 
             float x = sunSize*sunScale/2 * ((MathUtils.cos(per * MathUtils.PI2 - (initialAngleOffsetInDegrees * MathUtils.PI/180)))) + (sunX + sunSize*sunScale/2) - t.getRegionWidth()/2;
             float y = sunSize*sunScale/2 * ((MathUtils.sin(per * MathUtils.PI2 - (initialAngleOffsetInDegrees * MathUtils.PI/180)))) + (sunY + sunSize*sunScale/2) - t.getRegionHeight()/2;
@@ -79,8 +116,11 @@ public class Cloud extends Object {
             batch.setColor(1, 1, 1, 1);
         }
 
+        float d = -(nextXDest - sunX);
+        rot += d;
+
         batch.draw(r,  body.getPosition().x -r.getRegionWidth()/2,  body.getPosition().y -r.getRegionHeight()/2 + yOff, r.getRegionWidth()/2, r.getRegionHeight()/2, r.getRegionWidth(), r.getRegionHeight(), sunSize * sunScale * .0045f, sunSize * sunScale * .0045f,
-                ((sunTimer/1)/GameScreen.CLOUD_WIN_TIME) * 360);
+                rot);
     }
 
     public void drawRainbow(SpriteBatch batch, float amt) {
@@ -150,19 +190,6 @@ public class Cloud extends Object {
 
     }
 
-    private Color lerpColor(Color startColor, Color endColor, float per) {
-        Color c = new Color();
-        c.r = startColor.r + lerp(startColor.r, endColor.r, per);
-        c.g = startColor.g + lerp(startColor.g, endColor.g, per);
-        c.b = startColor.b + lerp(startColor.b, endColor.b, per);
-        c.a = .26f;
-        return c;
-    }
-
-    private float lerp(float start, float end, float per) {
-        return (end - start) * per;
-    }
-
     protected void configBodyDef() {
         bodyDef.type = BodyType.DynamicBody;
     }
@@ -172,7 +199,7 @@ public class Cloud extends Object {
         box.setAsBox(WIDTH, HEIGHT);
 
         fixtureDef.shape = box;
-        fixtureDef.density = .85f;
+        fixtureDef.density = .5f;//.85f;
         fixtureDef.friction = .4f;
         fixtureDef.restitution = 1f;
         fixtureDef.filter.categoryBits = Object.CATEGORY_CLOUD;

@@ -29,14 +29,13 @@ public class Sunbeam {
 
     private float angleToXDestInDegrees = 0;
 
-    float xDestt;
+    float xDest, nextXDest;
 
     public Sunbeam() {
         shape = new Polygon();
         width = 4f * (.2f);
         height = GameScreen.UNIT_HEIGHT;
         xStart = -width/2;
-        //System.out.println("SUNBEAM MOVEMENT DISABLED");
         setVertices();
     }
 
@@ -44,18 +43,19 @@ public class Sunbeam {
         //x comp of vector between center and newX
         float dxx = (xDest - xCenterBottom);
 
-        dxx *= .26f;
+        dxx *= .09f;
+        dxx *= 2f;
         return dxx;
     }
 
     public boolean readyForNextLocation() {
-        return (Math.abs(xCenterBottom - xDestt) < 1f);
+        return (Math.abs(xCenterBottom - xDest) < .2f);
     }
 
     private void setVertices() {
         float[] vertices = new float[8];
         //First Vertex Top Left
-        vertices[0] = xCenterTop - width/2 + width/8;
+        vertices[0] = xCenterTop - width/2;
         vertices[1] = GameScreen.UNIT_HEIGHT/2;
         //Second Vertex Bottom Left
         vertices[2] = xCenterTop - width/2 - width/3;
@@ -64,7 +64,7 @@ public class Sunbeam {
         vertices[4] = xCenterTop + width/2 + width/3;
         vertices[5] = GameScreen.UNIT_HEIGHT/2 - height;
         //Fourth Vertex Top Right
-        vertices[6] = xCenterTop + width/2 - width/8;
+        vertices[6] = xCenterTop + width/2;
         vertices[7] = GameScreen.UNIT_HEIGHT/2;
         shape.setVertices(vertices);
     }
@@ -98,8 +98,8 @@ public class Sunbeam {
 
     public void update(float xDest, float delta) {
         float dx = calcDx(xDest);
-        this.xDestt = xDest;
-        //dx = 0;
+        this.xDest = xDest;
+        if (GameScreen.TESTING) dx = 0;
         if (typeOfMovement) {
             pushVertices(dx, delta);
 
@@ -112,7 +112,7 @@ public class Sunbeam {
             float dir = 1;
             if (xCenterBottom - xDest > 0) dir = -1;
             if (dTheta > .01f) angleToXDestInDegrees += dir * dTheta;
-            //System.out.println(angleToXDestInDegrees);
+
         } else pushBeam(dx, delta);
 
     }
@@ -126,26 +126,31 @@ public class Sunbeam {
         float yScale = .08f;
         float x = xCenterTop;
         float y= GameScreen.UNIT_HEIGHT/2 + .2f;
-        float a = .25f + .23f * MathUtils.sin((GameScreen.ELAPSED_TIME + MathUtils.PI)/3) + .05f * (MathUtils.sin(GameScreen.ELAPSED_TIME));
+        float a = .45f + .1f * MathUtils.sin(GameScreen.ELAPSED_TIME/3);
+        a *= .6f;
         if (a < 0) a = 0;
 
-        batch.setColor(1, 1, .95f, a);
+
+        batch.setColor(1, 1, .95f, a * .3f);
         batch.draw(t, x -tWidth/2, y -tHeight/2 * 2f, tWidth/2, 2f * tHeight/2, tWidth, tHeight, xScale, yScale, angleToXDestInDegrees);
         batch.setColor(1, 1, 1, 1);
 
         float timerDesyncValues[] = {5, 3, 7, 1};
         int numOfExtraBeams = 4;
 
-        //add more glimmer
+        //add more glimmer when the sun timer is filling up! Also change rain particle image from line to actual image also parrallax rain particles
         for (int i = 0; i < numOfExtraBeams; i++) {
-            float aa = a - .45f + (.2f * MathUtils.sin((GameScreen.ELAPSED_TIME + timerDesyncValues[i])/2)) + (.175f * MathUtils.sin((GameScreen.ELAPSED_TIME + timerDesyncValues[i]) * 3));
-            if (aa < .2f) aa = .2f;
+            float desyncedTimer = GameScreen.ELAPSED_TIME + timerDesyncValues[i];
+            float aa = a - (.15f * Math.abs(MathUtils.sin(desyncedTimer/2))) + (.05f * MathUtils.sin(desyncedTimer*2f));
+            if (aa < 0) aa = 0;
 
             float dir = 1;
             if (i % 2 != 0) dir = -1;
-
-            batch.setColor(.9f, 1, .59f, aa);
-            batch.draw(t, x -tWidth/2 + dir * i * (.14f + (.05f * MathUtils.sin((GameScreen.ELAPSED_TIME + timerDesyncValues[i])/2))), y -tHeight/2 * 2f, tWidth/2, 2f * tHeight/2, tWidth, tHeight, xScale * .65f, yScale, angleToXDestInDegrees + dir * i * (1.0f));
+            if (i == 3) dir *= .7f;
+            //The timer in the color makes the sunlight switch between yellow light and whitish light
+            batch.setColor(.9f, 1, .59f + .3f * Math.abs(MathUtils.sin(desyncedTimer/5)), aa);
+            //batch.draw(t, x -tWidth/2 + dir * i * (.14f + (.05f * MathUtils.sin(desyncedTimer/2))), y -tHeight/2 * 2f, tWidth/2, 2f * tHeight/2, tWidth, tHeight, xScale * .65f, yScale, angleToXDestInDegrees + dir * i * (1.0f));
+            batch.draw(t, x - tWidth/2 + dir * (i * xScale * tWidth * .04f), y - tHeight/2 * 2f, tWidth/2, 2f * tHeight/2, tWidth, tHeight, xScale, yScale, angleToXDestInDegrees + dir * i * ((0.55f) * Math.abs(MathUtils.sin(GameScreen.ELAPSED_TIME/3))));
             batch.setColor(1, 1, 1, 1);
         }
 
@@ -161,9 +166,12 @@ public class Sunbeam {
         sr.line(vertices[6], vertices[7], vertices[0], vertices[1]);
 
         sr.setColor(Color.ORANGE);
-        sr.line(xCenterTop, GameScreen.UNIT_HEIGHT/2, xDestt, -GameScreen.UNIT_HEIGHT/2);
+        sr.line(xCenterTop, GameScreen.UNIT_HEIGHT/2, xDest, -GameScreen.UNIT_HEIGHT/2);
         sr.setColor(Color.BROWN);
         sr.line(xCenterTop, GameScreen.UNIT_HEIGHT/2, xCenterBottom, -GameScreen.UNIT_HEIGHT/2);
+
+        sr.setColor(Color.PINK);
+        sr.line(xCenterTop, GameScreen.UNIT_HEIGHT/2, nextXDest, -GameScreen.UNIT_HEIGHT/2);
     }
 
     public boolean contains(Body b) {

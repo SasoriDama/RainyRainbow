@@ -1,6 +1,7 @@
 package com.gdx.rainbow.particles;
 
 import com.badlogic.gdx.Game;
+import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.MathUtils;
 import com.gdx.rainbow.GameScreen;
@@ -21,11 +22,13 @@ public class ParticleSystem {
     private float nextParticleTimer = 0;
     private float nextParticleTime;
 
-    public ParticleSystem(float nextParticleTime) {
+    private int particlesPerFrame;
+
+    public ParticleSystem(float nextParticleTime, int particlesPerFrame) {
         particles = new ArrayList<Particle>();
         removedParticles = new ArrayList<Particle>();
         this.nextParticleTime = nextParticleTime;
-
+        this.particlesPerFrame = particlesPerFrame;
     }
 
     public void update(float delta) {
@@ -34,7 +37,9 @@ public class ParticleSystem {
 
         if (nextParticleTimer >= nextParticleTime) {
             nextParticleTimer = 0;
-            addParticle();
+            for (int i = 0; i < particlesPerFrame; i++) {
+                addParticle();
+            }
         }
 
         for (Particle p: particles) {
@@ -62,10 +67,17 @@ public class ParticleSystem {
         particles.add(new Particle(newPosition, newVelocity, newAcceleration));
     }
 
-    public void drawParticles(ShapeRenderer sr) {
+    public void drawParticles(SpriteBatch batch) {
+
+        for (Particle p: particles) {
+            p.draw(batch);
+        }
+    }
+
+    public void drawParticlesTwo(ShapeRenderer sr) {
         sr.setColor(Color.WHITE);
         for (Particle p: particles) {
-            p.draw(sr);
+            p.drawTwo(sr);
         }
     }
 

@@ -17,16 +17,19 @@ import net.dermetfan.gdx.graphics.g2d.Box2DSprite;
 public class Assets {
 
     public static final float CLOUD_IMAGE_SCALE = 1.65f;
+    public static final float CLOUD_ALPHA = .7f;
 
     public static Texture background_image;
     public static Texture sun_timer_image;
     public static Texture sun_timer_tick_image;
     public static Texture sun_beam_band_image;
     public static Texture rainbow_band_image;
+    public static Texture storm_cloud_particle;
     public static Box2DSprite player_image;
     public static Box2DSprite cloud_image;
 
     public static AnimatedBox2DSprite player_blowing_animation;
+    public static AnimatedBox2DSprite player_blowing_animation_flipped;
     public static AnimatedBox2DSprite player_win_animation;
 
     public static Texture loadTexture (String file) {
@@ -45,9 +48,11 @@ public class Assets {
         sun_timer_tick_image = loadTexture("data/sun_tick_four.png");
         sun_beam_band_image = loadTexture("data/sunbeam_band_two.png");
         rainbow_band_image = loadTexture("data/rainbow_band_two.png");
+        storm_cloud_particle = loadTexture("data/storm_cloud_particle.png");
         player_image = loadBox2DSprite("data/player.png");
-        cloud_image = loadBox2DSprite("data/cloudthree.png");
+        cloud_image = loadBox2DSprite("data/cloud_one.png");
         cloud_image.setScale(CLOUD_IMAGE_SCALE);
+
 
         Texture temp = loadTexture("data/player_blow_animation.png");
         TextureRegion t1 = new TextureRegion(temp, 0, 0, 256, 256);
@@ -55,9 +60,19 @@ public class Assets {
         TextureRegion t3 = new TextureRegion(temp, 0, 256 * 2, 256, 256);
         TextureRegion t4 = new TextureRegion(temp, 0, 256 * 3, 256, 256);
         TextureRegion t5 = new TextureRegion(temp, 0, 256 * 4, 256, 256);
-        Animation a = new Animation(.25f, t1, t2, t3, t4, t5);
+        Animation a = new Animation(.20f, t1, t2, t3, t4, t5);
         AnimatedSprite as = new AnimatedSprite(a);
         player_blowing_animation = new AnimatedBox2DSprite(as);
+
+        temp = loadTexture("data/player_blow_animation_flipped.png");
+        t1 = new TextureRegion(temp, 0, 0, 256, 256);
+        t2 = new TextureRegion(temp, 0, 256, 256, 256);
+        t3 = new TextureRegion(temp, 0, 256 * 2, 256, 256);
+        t4 = new TextureRegion(temp, 0, 256 * 3, 256, 256);
+        t5 = new TextureRegion(temp, 0, 256 * 4, 256, 256);
+        a = new Animation(.20f, t1, t2, t3, t4, t5);
+        as = new AnimatedSprite(a);
+        player_blowing_animation_flipped = new AnimatedBox2DSprite(as);
 
         temp = loadTexture("data/player_win_animation.png");
         t1 = new TextureRegion(temp, 0, 0, 256, 256);
