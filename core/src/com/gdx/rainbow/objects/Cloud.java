@@ -131,6 +131,7 @@ public class Cloud extends Object {
 
         float xScale = .0002f;
         float yScale = .0025f;
+        yScale = .0045f;
 
         float centerX = 0;
         float centerY = 0 - GameScreen.UNIT_HEIGHT/2;

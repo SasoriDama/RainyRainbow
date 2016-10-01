@@ -2,7 +2,7 @@ package com.gdx.rainbow.objects;
 
 import com.badlogic.gdx.physics.box2d.BodyDef;
 import com.badlogic.gdx.physics.box2d.PolygonShape;
-import com.badlogic.gdx.physics.box2d.World;
+import com.gdx.rainbow.Stats;
 import com.gdx.rainbow.Assets;
 import com.gdx.rainbow.GameScreen;
 
@@ -13,15 +13,21 @@ public class Player extends Object {
 
     public static final float SIZE = .25f;//.2f
 
+    public float blowTimer = 0;
+
+    public Stats stats;
+
     public Player() {
         super();
 
     }
 
-    public void set(GameScreen gameScreen, float x, float y) {
-        super.set(gameScreen, x, y);
-        setSprite(Assets.player_image);
+    public void set(GameScreen gameScreen, float x, float y, Stats stats) {
+        this.stats = stats;
 
+        super.set(gameScreen, x, y);
+
+        setSprite(Assets.player_image);
     }
 
     protected void configBodyDef() {
@@ -34,8 +40,9 @@ public class Player extends Object {
         box.setAsBox(SIZE, SIZE);
 
         fixtureDef.shape = box;
+        fixtureDef.density = 1;
         //fixtureDef.density = 1f;
-        fixtureDef.density = .5f;
+        //fixtureDef.density = .5f;
         fixtureDef.friction = .4f;
         fixtureDef.restitution = .8f;
         fixtureDef.filter.categoryBits = Object.CATEGORY_PLAYER;

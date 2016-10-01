@@ -23,25 +23,55 @@ public class MyGdxGame extends Game {
 
     public SpriteBatch batcher;
 
+	//Horrible disgusting temporary fix
+	public GameScreen s1;
+	public UpgradeScreen s2;
+
+	private boolean game = false;
+	//
+
 	@Override
 	public void create () {
 	    batcher = new SpriteBatch();
 		Assets.load();
-		setScreen(new GameScreen(this));
+		//setScreen(new GameScreen(this));
+		//setScreen(new UpgradeScreen(this, Stats.STARTING_STATS));
+
+		s1 = new GameScreen(this);
+		s2 = new UpgradeScreen(this, null);
+
+		set(game);
 
 		MyGdxGame.WIDTH = Gdx.graphics.getWidth();
 		MyGdxGame.HEIGHT = Gdx.graphics.getHeight();
 
 	}
 
+	public void set(boolean game) {
+		this.game = game;
+		if (game) {
+			Gdx.input.setInputProcessor(s1);
+			s1.stats = s2.stats;
+			s1.points = s2.points;
+
+		}
+		else {
+			Gdx.input.setInputProcessor(s2);
+			s2.stats = s1.stats;
+			s2.points = s1.points;
+		}
+	}
+
 	@Override
 	public void render () {
 		super.render();
-
+		if (game) s1.render(Gdx.graphics.getDeltaTime());
+		else s2.render(Gdx.graphics.getDeltaTime());
 	}
 
 	@Override
     public void dispose() {
+		super.dispose();
 	    this.getScreen().dispose();
         Assets.dispose();
         batcher.dispose();

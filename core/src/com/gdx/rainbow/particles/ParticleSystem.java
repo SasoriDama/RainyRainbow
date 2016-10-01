@@ -22,16 +22,13 @@ public class ParticleSystem {
     private float nextParticleTimer = 0;
     private float nextParticleTime;
 
-    private int particlesPerFrame;
-
-    public ParticleSystem(float nextParticleTime, int particlesPerFrame) {
+    public ParticleSystem(float nextParticleTime) {
         particles = new ArrayList<Particle>();
         removedParticles = new ArrayList<Particle>();
         this.nextParticleTime = nextParticleTime;
-        this.particlesPerFrame = particlesPerFrame;
     }
 
-    public void update(float delta) {
+    public void update(float delta, int particlesPerFrame) {
 
         nextParticleTimer += delta;
 
@@ -57,7 +54,7 @@ public class ParticleSystem {
     }
 
     private void addParticle() {
-        float x = MathUtils.random(-GameScreen.UNIT_WIDTH/2, GameScreen.UNIT_WIDTH/2);
+        float x = MathUtils.random((float)-GameScreen.UNIT_WIDTH/2, (float)GameScreen.UNIT_WIDTH/2);
         float y = GameScreen.UNIT_HEIGHT/2 + .3f;
 
         Vector2 newPosition = new Vector2(x, y);

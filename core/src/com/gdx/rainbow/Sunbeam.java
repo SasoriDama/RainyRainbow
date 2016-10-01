@@ -31,6 +31,8 @@ public class Sunbeam {
 
     float xDest, nextXDest;
 
+    public float speed = 1;
+
     public Sunbeam() {
         shape = new Polygon();
         width = 4f * (.2f);
@@ -45,6 +47,7 @@ public class Sunbeam {
 
         dxx *= .09f;
         dxx *= 2f;
+        dxx *= speed;
         return dxx;
     }
 

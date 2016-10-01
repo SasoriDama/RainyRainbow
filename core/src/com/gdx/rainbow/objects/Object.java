@@ -17,9 +17,11 @@ public class Object {
     //Collision Filters
     public static final short CATEGORY_PLAYER = 0x0001;
     public static final short CATEGORY_CLOUD = 0x0002;
+    public static final short CATEGORY_DENSE_CLOUD = 0x0002;
 
     public static final short MASK_PLAYER = -1;
     public static final short MASK_CLOUD = -8;
+    public static final short MASK__DENSE_CLOUD = -8;
     //if you want clouds to collide with eachother set MASK_CLOUD to CATEGORY_CLOUD;
 
     public Body body;

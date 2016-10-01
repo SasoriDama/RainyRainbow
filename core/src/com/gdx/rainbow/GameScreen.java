@@ -41,6 +41,12 @@ public class GameScreen extends ScreenAdapter implements InputProcessor {
     public ArrayList<Object> objects, removedObjects;
     public ArrayList<Cloud> sunClouds;
     Player player;
+    Stats stats = Stats.STARTING_STATS;
+    public int points = 50;
+
+    int level = 0;
+
+
     Sunbeam sunBeam;
     ParticleSystem rainParticles;
 
@@ -61,9 +67,14 @@ public class GameScreen extends ScreenAdapter implements InputProcessor {
     Vector2 mouseLocation;
     float playerAngleToFocusedCloudInDegrees = 0;
     float playerRotation = 0;
+    int numOfRainParticlesPerFrame = 2;
     private boolean inputHeld = false;
     private Cloud focusedCloud = null;
     private Cloud winCloud = null;
+
+    float yScl = 1;
+    float xScl = 1;
+    float playerSclOff = 1;
 
     public static float WIN_TIME = 10;
     public static float LOSE_TIME = 10 * 5;
@@ -71,8 +82,6 @@ public class GameScreen extends ScreenAdapter implements InputProcessor {
 
     public static float RAINBOW_DRAW_TIME = 2;
     public static float WON_TIME = RAINBOW_DRAW_TIME + 5;
-
-    public final float PLAYER_PUSH_RANGE = 1.5f;
 
     public Vector2 windForce;
 
@@ -83,7 +92,7 @@ public class GameScreen extends ScreenAdapter implements InputProcessor {
 
         this.game = game;
         sr = new ShapeRenderer();
-        Gdx.input.setInputProcessor(this);
+        //Gdx.input.setInputProcessor(this);
         mouseLocation = new Vector2();
         guiCam = new OrthographicCamera();
         viewport = new FillViewport(UNIT_WIDTH, UNIT_HEIGHT, guiCam);
@@ -92,13 +101,15 @@ public class GameScreen extends ScreenAdapter implements InputProcessor {
 
         guiCam.position.set(0, 0, 0);
 
+
+        if (TESTING) WIN_TIME = 1;
         //guiCam.zoom = 2;
 
         //UNIT_WIDTH *= guiCam.zoom;
         //UNIT_HEIGHT *= guiCam.zoom;
 
         world = new World(new Vector2(0, 0), true);
-        rainParticles = new ParticleSystem(.001f, 2);
+        rainParticles = new ParticleSystem(.001f);
         objects = new ArrayList<Object>();
         removedObjects = new ArrayList<Object>();
         sunClouds = new ArrayList<Cloud>();
@@ -107,22 +118,36 @@ public class GameScreen extends ScreenAdapter implements InputProcessor {
 
         if (GameScreen.TESTING) System.out.println("TESTING MODE ENABLED");
 
-        startLevel();
+        startLevel(level);
 
-
-        Cloud c = (Cloud) Object.createObject(Object.CLOUD);
-        c.set(this, 0, 0, new Vector2(0, 0));
     }
 
     public void update(float delta) {
         world.step(delta, 6, 2);
+        //YOU STILL HAVE TO CLEAN DRAW FUNCTION
         //System.out.println("Objects: " + objects.size() + " Objects Removed This Frame: " + removedObjects.size());
         //System.out.println("SunClouds: " + sunClouds.size());
+
+       // System.out.println(player.stats == Stats.STARTING_STATS);
+
+        //if (Gdx.input.isKeyPressed(Input.Keys.G)) {
+         //   if (player.stats == Stats.STARTING_STATS) player.stats = Stats.END_STATS;
+          //  else {
+           //     player.stats = Stats.STARTING_STATS;
+            //}
+        //}
+
+        if (Gdx.input.isKeyPressed(Input.Keys.W)) {
+            winLevel((Cloud) objects.get(1), delta * 30);
+        }
+
+        //if (player.body.getLinearVelocity().len() > 0) System.out.println(player.body.getLinearVelocity().len());
+        //if (player.body.getLinearVelocity().len() >= player.stats.speed) System.out.println("capped");
 
         this.handleTimers(delta);
         this.handlePlayerInput(delta);
 
-        rainParticles.update(delta);
+        rainParticles.update(delta, numOfRainParticlesPerFrame);
         sunBeam.update(newBeamLocation, delta);
 
         this.handlePlayerAnimations();
@@ -151,7 +176,11 @@ public class GameScreen extends ScreenAdapter implements InputProcessor {
         }
 
         if (wonTimer >= WON_TIME) {
-            startLevel();
+            //game.setScreen(new UpgradeScreen(game, stats));
+            points += 1;
+            level += 1;
+            game.set(false);
+            startLevel(level);
         }
 
         if (loseTimer >= GameScreen.LOSE_TIME) {
@@ -211,7 +240,9 @@ public class GameScreen extends ScreenAdapter implements InputProcessor {
     }
 
     private void winLevel(Cloud c, float delta) {
-        if (wonTimer >= WON_TIME) return;
+        if (wonTimer >= WON_TIME) {
+            return;
+        }
         wonTimer += delta;
         if (winCloud == null) winCloud = c;
     }
@@ -220,7 +251,7 @@ public class GameScreen extends ScreenAdapter implements InputProcessor {
 
     }
 
-    private void startLevel() {
+    public void startLevel(int level) {
         wonTimer = 0;
         loseTimer = 0;
         beamTimer = 0;
@@ -235,22 +266,32 @@ public class GameScreen extends ScreenAdapter implements InputProcessor {
         sunClouds.clear();
         Assets.player_win_animation.setTime(0);
         player = (Player) Object.createObject(Object.PLAYER);
-        player.set(this, 0, 0);
+        player.set(this, 0, 0, stats);
+
+        //level things
+        if (level % 3 == 0) this.numOfRainParticlesPerFrame += 1;
+        if (numOfRainParticlesPerFrame > 20) numOfRainParticlesPerFrame = 20;
+        this.nextBeamTime = 5 - (level * .15f);
+        if (nextBeamTime < 0) nextBeamTime = 0;
+        sunBeam.speed = 1 + .1f * level;
+        windTime = 3 - (level * .08f);
+
+        //if (TESTING) {
+            Cloud c = (Cloud) Object.createObject(Object.CLOUD);
+            c.set(this, 0, 0, new Vector2(0, 0));
+        //}
     }
 
     private void movePlayerTowards(Vector2 endLocation) {
+        if (player.body.getLinearVelocity().len() > player.stats.speed) return;
         Vector2 force = new Vector2(0, 0);
         Vector2 startLocation = player.body.getPosition();
         //vector between desination and player;
         force.set(endLocation.x - startLocation.x, endLocation.y - startLocation.y);
         force.nor();
-        //force.scl(.030f);
-        //force.scl(.015f);
-        force.scl(.020f);
-        //force.scl(0);
-        //player.body.applyForce(force, player.body.getPosition(), true);
-        player.body.applyLinearImpulse(force, player.body.getPosition(), true);
-        //System.out.println(player.body.getLinearVelocity().len());
+        force.scl(player.stats.acceleration);
+        player.body.applyForce(force, player.body.getPosition(), true);
+        //player.body.applyLinearImpulse(force, player.body.getPosition(), true);
     }
 
     private void applyDragForce(Object o) {
@@ -258,7 +299,11 @@ public class GameScreen extends ScreenAdapter implements InputProcessor {
         Vector2 v = o.body.getLinearVelocity();
         dragForce.set(-v.x, -v.y);
         //dragForce.scl(.32f);
-        if (o instanceof Player) dragForce.scl(.35f);
+        if (o instanceof Player) {
+            //dragForce.scl(.35f);
+            dragForce.scl(.85f);
+            dragForce.scl((player.stats.acceleration/Stats.ACCELERATION.endVal));
+        }
         if (o instanceof Cloud) dragForce.scl(.10f);
         o.body.applyForce(dragForce, o.body.getPosition(), true);
     }
@@ -306,7 +351,12 @@ public class GameScreen extends ScreenAdapter implements InputProcessor {
         //temp testing below
         force.scl(.4f);
         force.scl(1, .5f);
+        force.scl(player.stats.pushStrength);
         c.body.applyForce(force, c.body.getPosition(), true);
+        force.scl(1/player.stats.pushStrength);
+        //Push Player away from cloud
+        force.scl(-player.stats.pushBackForce);
+        player.body.applyForce(force, player.body.getPosition(), true);
     }
 
     private void pickNewWindForce() {
@@ -324,6 +374,7 @@ public class GameScreen extends ScreenAdapter implements InputProcessor {
     }
 
     private void handlePlayerInput(float delta) {
+
         //If not blowing then move player towards tapped location
         if (inputHeld && focusedCloud == null) this.movePlayerTowards(mouseLocation);
         if (focusedCloud != null) {
@@ -336,7 +387,7 @@ public class GameScreen extends ScreenAdapter implements InputProcessor {
             this.pushCloudAwayFromPlayer(focusedCloud);
 
             // player stops pushing if cloud is out of range or no longer tap held
-            if (player.body.getPosition().dst(focusedCloud.body.getPosition()) > PLAYER_PUSH_RANGE) focusedCloud = null;
+            if (player.body.getPosition().dst(focusedCloud.body.getPosition()) > player.stats.pushRange) focusedCloud = null;
             else if (!focusedCloud.body.getFixtureList().first().testPoint(mouseLocation)) focusedCloud = null;
         }
 
@@ -353,8 +404,11 @@ public class GameScreen extends ScreenAdapter implements InputProcessor {
 
         float targetAngle = 0;
 
-        boolean angleLessThan45 = Math.abs(mouseLocation.x - player.body.getPosition().x) > Math.abs(mouseLocation.y - player.body.getPosition().y);
-        if (inputHeld && angleLessThan45 || (focusedCloud != null)) targetAngle = playerAngleToFocusedCloudInDegrees;
+        //doesn't rotate for angles more than 65 degrees from x axis unless player is blowing
+        boolean angleLessThanThreshold = Math.abs(playerAngleToFocusedCloudInDegrees) < 65;
+
+        //boolean angleLessThan45 = (((int) playerAngleToFocusedCloudInDegrees) % 90 != 0);
+        if (inputHeld && angleLessThanThreshold || (focusedCloud != null)) targetAngle = playerAngleToFocusedCloudInDegrees;
 
         playerRotation +=  1.4f * (targetAngle - playerRotation) * delta;
 
@@ -403,7 +457,7 @@ public class GameScreen extends ScreenAdapter implements InputProcessor {
     }
 
 
-    public void draw() {
+    public void draw(float delta) {
         GL20 gl = Gdx.gl;
         gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
@@ -412,7 +466,32 @@ public class GameScreen extends ScreenAdapter implements InputProcessor {
 
         game.batcher.begin();
         game.batcher.draw(Assets.background_image, -(UNIT_WIDTH)/2, -(UNIT_HEIGHT)/2, UNIT_WIDTH, UNIT_HEIGHT);
-        float playerSclOff = .1f *(MathUtils.sin(GameScreen.ELAPSED_TIME * 1.25f));
+        //float playerSclOff = .2f *(MathUtils.sin(GameScreen.ELAPSED_TIME * 1.25f));
+
+        if (focusedCloud != null) {
+            if (inputHeld) {
+                if (player.blowTimer < .6f) if (playerSclOff < 1.4f) playerSclOff += 1.15f * delta;
+                if (player.blowTimer > .6f) {
+                    if (playerSclOff > 1) {
+                        playerSclOff -= 1.25f * delta;
+                        System.out.println("occuring");
+                    }
+                }
+                System.out.println(player.blowTimer);
+
+                if (player.blowTimer < MathUtils.PI) player.blowTimer += delta * 3;
+                if (player.blowTimer > MathUtils.PI) player.blowTimer = 0;
+                yScl = 1 - .15f * MathUtils.sin(player.blowTimer - 1.f);
+                xScl = 1 + .15f * MathUtils.sin(player.blowTimer - 1.f);
+            }
+        }
+
+        if (focusedCloud == null) {
+            player.blowTimer = 0;
+            yScl -= (yScl - 1) * 4f * delta;
+            xScl -= (xScl - 1) * 4f * delta;
+            playerSclOff -= (playerSclOff - 1) * 7 * delta;
+        }
 
         //repeat animation
         if (player.getSprite() instanceof AnimatedBox2DSprite) {
@@ -423,7 +502,9 @@ public class GameScreen extends ScreenAdapter implements InputProcessor {
             }
         }
 
-        player.getSprite().setScale(1 +  playerSclOff);
+        //player.getSprite().setScale(1 +  playerSclOff);
+        player.getSprite().setScale(1.2f * playerSclOff);
+        player.getSprite().setScale(player.getSprite().getScaleX() * xScl, player.getSprite().getScaleY() * yScl);
         player.getSprite().setRotation(playerRotation);
         for (Object o: objects) {
             if (o instanceof Player) player.getSprite().draw(game.batcher, o.body);
@@ -438,9 +519,9 @@ public class GameScreen extends ScreenAdapter implements InputProcessor {
                     if (alpha < .4f) alpha = .4f;
                     o.getSprite().setAlpha(alpha);
                 }
-                o.getSprite().setScale(scale + (.14f * MathUtils.sin(GameScreen.ELAPSED_TIME + o.timerOffset)));
+                o.getSprite().setScale(scale);// + (.16f * MathUtils.sin(GameScreen.ELAPSED_TIME + o.timerOffset)));
                 if (o == winCloud) winCloud.drawRainbow(game.batcher, (wonTimer/RAINBOW_DRAW_TIME));
-                float cloudYOff = .07f * (MathUtils.sin(GameScreen.ELAPSED_TIME  + o.timerOffset * .85f));
+                float cloudYOff = (.07f) * (MathUtils.sin(GameScreen.ELAPSED_TIME  + o.timerOffset * .85f * (((Cloud) o).getWinPercent() + 1)));
                 Assets.cloud_image.draw(game.batcher, o.body.getPosition().x, o.body.getPosition().y + cloudYOff, Cloud.WIDTH * Assets.CLOUD_IMAGE_SCALE, Cloud.HEIGHT * Assets.CLOUD_IMAGE_SCALE, 0);
                 Assets.cloud_image.setScale(Assets.CLOUD_IMAGE_SCALE);
                 Assets.cloud_image.setAlpha(Assets.CLOUD_ALPHA);
@@ -506,7 +587,7 @@ public class GameScreen extends ScreenAdapter implements InputProcessor {
     @Override
     public void render(float delta) {
         update(delta);
-        draw();
+        draw(delta);
     }
 
     @Override
@@ -546,7 +627,7 @@ public class GameScreen extends ScreenAdapter implements InputProcessor {
 
         for (Object o: objects) {
             if (o instanceof Cloud) {
-                if (o.body.getPosition().dst(player.body.getPosition()) >= PLAYER_PUSH_RANGE) continue;
+                if (o.body.getPosition().dst(player.body.getPosition()) >= player.stats.pushRange) continue;
                 if (o.body.getFixtureList().first().testPoint(mouseLocation)) {
                     //System.out.println("touched!");
                     focusedCloud = (Cloud) o;
@@ -575,11 +656,11 @@ public class GameScreen extends ScreenAdapter implements InputProcessor {
         float pixX = (screenX - MyGdxGame.WIDTH/2);
         float pixY = (-(screenY - MyGdxGame.HEIGHT/2));
         mouseLocation.set(pixX/256.00f, pixY/256.00f);
-        System.out.println(mouseLocation);
+        //System.out.println(mouseLocation);
 
         for (Object o: objects) {
             if (o instanceof Cloud) {
-                if (o.body.getPosition().dst(player.body.getPosition()) >= PLAYER_PUSH_RANGE) continue;
+                if (o.body.getPosition().dst(player.body.getPosition()) >= player.stats.pushRange) continue;
                 if (o.body.getFixtureList().first().testPoint(mouseLocation)) {
                     //System.out.println("touched!");
                     focusedCloud = (Cloud) o;

@@ -6,6 +6,7 @@ import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
+import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import net.dermetfan.gdx.graphics.g2d.AnimatedBox2DSprite;
 import net.dermetfan.gdx.graphics.g2d.AnimatedSprite;
@@ -31,6 +32,9 @@ public class Assets {
     public static AnimatedBox2DSprite player_blowing_animation;
     public static AnimatedBox2DSprite player_blowing_animation_flipped;
     public static AnimatedBox2DSprite player_win_animation;
+
+    public static Texture stats_screen_plus_button;
+    public static Texture stats_screen_minus_button;
 
     public static Texture loadTexture (String file) {
         return new Texture(Gdx.files.internal(file));
@@ -83,6 +87,9 @@ public class Assets {
         a = new Animation(.5f, t1, t2, t3, t4, t5);
         as = new AnimatedSprite(a);
         player_win_animation = new AnimatedBox2DSprite(as);
+
+        stats_screen_plus_button = loadTexture("data/stats_screen/plus_button.png");
+        stats_screen_minus_button = loadTexture("data/stats_screen/minus_button.png");
     }
 
     public static void playSound (Sound sound) {
