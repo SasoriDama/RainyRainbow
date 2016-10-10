@@ -19,7 +19,7 @@ public class Player extends Object {
 
     public Player() {
         super();
-
+        image = Assets.player_image;
     }
 
     public void set(GameScreen gameScreen, float x, float y, Stats stats) {
@@ -27,7 +27,6 @@ public class Player extends Object {
 
         super.set(gameScreen, x, y);
 
-        setSprite(Assets.player_image);
     }
 
     protected void configBodyDef() {

@@ -21,8 +21,10 @@ public class Sunbeam {
 
     private float xStart, xCenterTop, xCenterBottom;
     private float width, height;
+    public float widthScl = 1;
     public Polygon shape;
 
+    //does the sunbeam rotate or move straight if true it moves straight
     public boolean typeOfMovement = true;
 
     //private float drawLineSpacing = .125f/20;
@@ -33,9 +35,12 @@ public class Sunbeam {
 
     public float speed = 1;
 
-    public Sunbeam() {
+    public Sunbeam(float widthScl) {
+        this.widthScl = widthScl;
         shape = new Polygon();
         width = 4f * (.2f);
+        width *= 1.5f;
+        width *= widthScl;
         height = GameScreen.UNIT_HEIGHT;
         xStart = -width/2;
         setVertices();
@@ -120,17 +125,20 @@ public class Sunbeam {
 
     }
 
-    public void draw(SpriteBatch batch) {
+    public void draw(SpriteBatch batch, float ALPHA) {
 
         TextureRegion t = new TextureRegion(Assets.sun_beam_band_image);
         float tWidth = t.getRegionWidth();
         float tHeight = t.getRegionHeight();
         float xScale = .01f;
+        xScale = .005f;
+        xScale *= widthScl;
         float yScale = .08f;
         float x = xCenterTop;
         float y= GameScreen.UNIT_HEIGHT/2 + .2f;
         float a = .45f + .1f * MathUtils.sin(GameScreen.ELAPSED_TIME/3);
-        a *= .6f;
+        a *= .68f;
+        a *= ALPHA;
         if (a < 0) a = 0;
 
 
@@ -138,10 +146,11 @@ public class Sunbeam {
         batch.draw(t, x -tWidth/2, y -tHeight/2 * 2f, tWidth/2, 2f * tHeight/2, tWidth, tHeight, xScale, yScale, angleToXDestInDegrees);
         batch.setColor(1, 1, 1, 1);
 
-        float timerDesyncValues[] = {5, 3, 7, 1};
+        float timerDesyncValues[] = {5, 3, 7, 1, 2, 6, 2, 8, 9, 0};
         int numOfExtraBeams = 4;
+        numOfExtraBeams = 10;
 
-        //add more glimmer when the sun timer is filling up! Also change rain particle image from line to actual image also parrallax rain particles
+        //add more glimmer when the sun timer is filling up!
         for (int i = 0; i < numOfExtraBeams; i++) {
             float desyncedTimer = GameScreen.ELAPSED_TIME + timerDesyncValues[i];
             float aa = a - (.15f * Math.abs(MathUtils.sin(desyncedTimer/2))) + (.05f * MathUtils.sin(desyncedTimer*2f));
@@ -152,8 +161,8 @@ public class Sunbeam {
             if (i == 3) dir *= .7f;
             //The timer in the color makes the sunlight switch between yellow light and whitish light
             batch.setColor(.9f, 1, .59f + .3f * Math.abs(MathUtils.sin(desyncedTimer/5)), aa);
-            //batch.draw(t, x -tWidth/2 + dir * i * (.14f + (.05f * MathUtils.sin(desyncedTimer/2))), y -tHeight/2 * 2f, tWidth/2, 2f * tHeight/2, tWidth, tHeight, xScale * .65f, yScale, angleToXDestInDegrees + dir * i * (1.0f));
-            batch.draw(t, x - tWidth/2 + dir * (i * xScale * tWidth * .04f), y - tHeight/2 * 2f, tWidth/2, 2f * tHeight/2, tWidth, tHeight, xScale, yScale, angleToXDestInDegrees + dir * i * ((0.55f) * Math.abs(MathUtils.sin(GameScreen.ELAPSED_TIME/3))));
+            //batch.draw(t, x - tWidth/2 + dir * (i * xScale * tWidth * .04f), y - tHeight/2 * 2f, tWidth/2, 2f * tHeight/2, tWidth, tHeight, xScale, yScale, angleToXDestInDegrees + dir * i * ((0.55f) * Math.abs(MathUtils.sin(GameScreen.ELAPSED_TIME/3))));
+            batch.draw(t, x - tWidth/2 + dir * widthScl * (i * xScale * tWidth * .075f), y - tHeight/2 * 2f, tWidth/2, 2f * tHeight/2, tWidth, tHeight, xScale, yScale, angleToXDestInDegrees + dir * i * ((0.55f) * Math.abs(MathUtils.sin(GameScreen.ELAPSED_TIME/3))));
             batch.setColor(1, 1, 1, 1);
         }
 

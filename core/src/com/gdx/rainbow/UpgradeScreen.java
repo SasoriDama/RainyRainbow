@@ -77,8 +77,8 @@ public class UpgradeScreen extends ScreenAdapter implements InputProcessor {
         for (int i = 0; i < Stats.STATS.size(); i++) {
             Stat stat = Stats.STATS.get(i);
             float x = -150;
-            float y = 160 - i * 80;
-            font.draw(batch, stat.name + ": ", x- 100, y);
+            float y = 160 - i * 50;
+            font.draw(batch, stat.name + ": ", x- 140, y);
 
             for (int j = 0; j < stats.upgradedAmt[i]; j++) {
                 font.draw(batch, "x", x + 10 + 20 * j, y);
@@ -93,7 +93,7 @@ public class UpgradeScreen extends ScreenAdapter implements InputProcessor {
         for (int d = 0; d < upgradeButtons.length; d++) {
             float scl = .3f;
             float x = 100;
-            float y = 160 - d * 80;
+            float y = 160 - d * 50;
             upgradeButtons[d] = new Button(x, y, scl, Assets.stats_screen_plus_button);
             upgradeButtons[d].draw(batch);
         }
@@ -101,7 +101,7 @@ public class UpgradeScreen extends ScreenAdapter implements InputProcessor {
         for (int d = 0; d < upgradeButtons.length; d++) {
             float scl = .3f;
             float x = 100 + 50;
-            float y = 160 - d * 80;
+            float y = 160 - d * 50;
             upgradeButtons1[d] = new Button(x, y, scl, Assets.stats_screen_minus_button);
             upgradeButtons1[d].draw(batch);
         }
@@ -144,7 +144,7 @@ public class UpgradeScreen extends ScreenAdapter implements InputProcessor {
         float pixY = (float) (-(screenY - MyGdxGame.HEIGHT/2));
         mouseLocation.set(pixX/2, pixY/2);
 
-        System.out.println(mouseLocation);
+        //System.out.println(mouseLocation);
 
         for (int d = 0; d < upgradeButtons.length; d++) {
             Button b = (upgradeButtons[d]);

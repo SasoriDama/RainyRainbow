@@ -12,16 +12,16 @@ import net.dermetfan.gdx.graphics.g2d.Box2DSprite;
  */
 public class Object {
 
-    public static final int PLAYER = 0, CLOUD = 1;
+    public static final int PLAYER = 0, CLOUD = 1, DENSE_CLOUD = 2, POWER_UP = 3;
 
     //Collision Filters
     public static final short CATEGORY_PLAYER = 0x0001;
     public static final short CATEGORY_CLOUD = 0x0002;
-    public static final short CATEGORY_DENSE_CLOUD = 0x0002;
+    public static final short CATEGORY_DENSE_CLOUD = 0x004;
 
-    public static final short MASK_PLAYER = -1;
-    public static final short MASK_CLOUD = -8;
-    public static final short MASK__DENSE_CLOUD = -8;
+    public static final short MASK_PLAYER = 0;
+    public static final short MASK_CLOUD = -4;
+    public static final short MASK__DENSE_CLOUD = -2;
     //if you want clouds to collide with eachother set MASK_CLOUD to CATEGORY_CLOUD;
 
     public Body body;
@@ -30,14 +30,20 @@ public class Object {
     protected BodyDef bodyDef;
     protected FixtureDef fixtureDef;
 
+    protected float density = .5f;
+    protected short categoryMask, categoryBit;
+    public Box2DSprite image;
+
    private Box2DSprite sprite;
 
     public float timerOffset;
 
     public static Object createObject(int ID) {
         switch (ID) {
-            case (Object.CLOUD): { return new Cloud();}
             case (Object.PLAYER): { return new Player();}
+            case (Object.CLOUD): { return new Cloud();}
+            case (Object.DENSE_CLOUD): {return new DenseCloud();}
+            case (Object.POWER_UP): {return new PowerUp();}
             default: return null;
         }
     }
@@ -57,6 +63,8 @@ public class Object {
         fixture = body.createFixture(fixtureDef);
         body.setFixedRotation(true);
         gameScreen.objects.add(this);
+
+        this.setSprite(image);
     }
 
     protected void configBodyDef() {

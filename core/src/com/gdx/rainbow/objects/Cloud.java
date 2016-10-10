@@ -10,6 +10,8 @@ import com.badlogic.gdx.physics.box2d.*;
 import com.badlogic.gdx.physics.box2d.BodyDef.BodyType;
 import com.gdx.rainbow.Assets;
 import com.gdx.rainbow.GameScreen;
+import com.gdx.rainbow.Stats;
+import net.dermetfan.gdx.graphics.g2d.Box2DSprite;
 
 /**
  * Created by WAM on 9/5/2016.
@@ -33,14 +35,23 @@ public class Cloud extends Object {
 
     public Cloud() {
         super();
+        image = Assets.cloud_image;
+        categoryMask = Object.MASK_CLOUD;
+        categoryBit = Object.CATEGORY_CLOUD;
     }
 
     public void set(GameScreen gameScreen, float x, float y, Vector2 initialVel) {
         super.set(gameScreen, x, y);
 
-        setSprite(Assets.cloud_image);
+        setSprite(image);
 
         body.setLinearVelocity(initialVel);
+    }
+
+    public void resetSunTimer(float amt, float delta) {
+
+        sunTimer -= (amt) * delta;
+
     }
 
     public void resetPushedTimer(float delta) {
@@ -77,7 +88,14 @@ public class Cloud extends Object {
 
         float sunSize = .30f;
         float sunTickSize = .0016f;
-        float sunScale = .8f + ((.3f + (sunTimer * .01f)) * Math.abs(MathUtils.sin(GameScreen.ELAPSED_TIME *.9f)));
+        float sunScale = .8f + ((.36f + (sunTimer * .01f)) * Math.abs(MathUtils.sin(GameScreen.ELAPSED_TIME *.9f)));
+
+        //sun timer grows and shrinks instead of popping up out of nowhere
+        if (getWinPercent() < .1) sunScale *= 10 * getWinPercent();
+
+        //it gets huge as it approaches a win
+        sunScale *= (1 + getWinPercent());
+
         float sunX =  body.getPosition().x - sunSize*sunScale/2;
         float sunY = body.getPosition().y - sunSize*sunScale/2;
         float yOff = .1f;
@@ -100,6 +118,7 @@ public class Cloud extends Object {
             float x = sunSize*sunScale/2 * ((MathUtils.cos(per * MathUtils.PI2 - (initialAngleOffsetInDegrees * MathUtils.PI/180)))) + (sunX + sunSize*sunScale/2) - t.getRegionWidth()/2;
             float y = sunSize*sunScale/2 * ((MathUtils.sin(per * MathUtils.PI2 - (initialAngleOffsetInDegrees * MathUtils.PI/180)))) + (sunY + sunSize*sunScale/2) - t.getRegionHeight()/2;
             float scl = .4f;
+            scl *= sunScale;
             float dx = (float) ((x - sunX) * .0005f * .85f * Math.sin(GameScreen.ELAPSED_TIME));
             float dy = (float) ((y - sunY) * .0005f * .85f * Math.sin(GameScreen.ELAPSED_TIME));
 
@@ -131,7 +150,7 @@ public class Cloud extends Object {
 
         float xScale = .0002f;
         float yScale = .0025f;
-        yScale = .0045f;
+        //yScale = .0045f;
 
         float centerX = 0;
         float centerY = 0 - GameScreen.UNIT_HEIGHT/2;
@@ -142,6 +161,7 @@ public class Cloud extends Object {
 
         float eccentricity = 1.3f;
         float transparency = .45f;
+        transparency = .85f;
 
         //dist from cloud to bottom center
         float radius = (float) Math.sqrt(tempX * tempX + tempY * tempY);
@@ -200,11 +220,11 @@ public class Cloud extends Object {
         box.setAsBox(WIDTH, HEIGHT);
 
         fixtureDef.shape = box;
-        fixtureDef.density = .5f;//.85f;
+        fixtureDef.density = this.density;//.85f;
         fixtureDef.friction = .4f;
         fixtureDef.restitution = 1f;
-        fixtureDef.filter.categoryBits = Object.CATEGORY_CLOUD;
-        fixtureDef.filter.maskBits = Object.MASK_CLOUD;
+        fixtureDef.filter.categoryBits = categoryMask;
+        fixtureDef.filter.maskBits = categoryBit;
     }
 
 }
