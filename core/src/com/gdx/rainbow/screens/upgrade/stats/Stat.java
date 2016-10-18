@@ -1,4 +1,4 @@
-package com.gdx.rainbow;
+package com.gdx.rainbow.screens.upgrade.stats;
 
 /**
  * Created by WAM on 9/25/2016.
@@ -15,5 +15,4 @@ public class Stat {
         this.endVal = endVal;
         Stats.STATS.add(this);
     }
-
 }

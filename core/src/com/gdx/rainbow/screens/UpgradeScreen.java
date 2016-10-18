@@ -1,18 +1,18 @@
-package com.gdx.rainbow;
+package com.gdx.rainbow.screens;
 
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.Input;
 import com.badlogic.gdx.InputProcessor;
 import com.badlogic.gdx.ScreenAdapter;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-import com.badlogic.gdx.graphics.g2d.Sprite;
-import com.badlogic.gdx.graphics.g3d.particles.ResourceData;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.viewport.FillViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
+import com.gdx.rainbow.*;
+import com.gdx.rainbow.screens.upgrade.stats.*;
+import com.gdx.rainbow.screens.menus.utils.Button;
 
 
 /**
@@ -25,8 +25,6 @@ public class UpgradeScreen extends ScreenAdapter implements InputProcessor {
     OrthographicCamera guiCam;
     Viewport viewport;
 
-    BitmapFont font = new BitmapFont();
-
     //TEMPORARY
     public static float UNIT_WIDTH = MyGdxGame.WIDTH/2;
     public static float UNIT_HEIGHT = MyGdxGame.HEIGHT/2;
@@ -37,10 +35,7 @@ public class UpgradeScreen extends ScreenAdapter implements InputProcessor {
     Button[] upgradeButtons1;
     Button play;
 
-    public Stats stats;
-    public int points = 0;
-
-    public UpgradeScreen(MyGdxGame game, Stats stats) {
+    public UpgradeScreen(MyGdxGame game) {
         this.game = game;
         //Gdx.input.setInputProcessor(this);
         guiCam = new OrthographicCamera();
@@ -73,19 +68,21 @@ public class UpgradeScreen extends ScreenAdapter implements InputProcessor {
         batch.setProjectionMatrix(guiCam.combined);
 
         batch.begin();
-        font.draw(batch, "Points:  " + points, 200, 160);
-        for (int i = 0; i < Stats.STATS.size(); i++) {
+        game.font.draw(batch, "Level: " + game.gameScreen.level, 200, 230);
+        game.font.draw(batch, "Total Score: " + game.gameScreen.score.compoundedScore, 200, 190);
+        game.font.draw(batch, "Points:  " + game.gameScreen.points, 200, 160);
+        for (int i = 0; i < com.gdx.rainbow.screens.upgrade.stats.Stats.STATS.size(); i++) {
             Stat stat = Stats.STATS.get(i);
             float x = -150;
             float y = 160 - i * 50;
-            font.draw(batch, stat.name + ": ", x- 140, y);
+            game.font.draw(batch, stat.name + ": ", x- 140, y);
 
-            for (int j = 0; j < stats.upgradedAmt[i]; j++) {
-                font.draw(batch, "x", x + 10 + 20 * j, y);
+            for (int j = 0; j < game.gameScreen.stats.upgradedAmt[i]; j++) {
+                game.font.draw(batch, "x", x + 10 + 20 * j, y);
             }
 
-            for (int h = 0; h < Stats.NUM_OF_UPGRADES - stats.upgradedAmt[i]; h++) {
-                font.draw(batch, ".", x + 10 + 20 * stats.upgradedAmt[i] + 20 * h, y);
+            for (int h = 0; h < com.gdx.rainbow.screens.upgrade.stats.Stats.NUM_OF_UPGRADES - game.gameScreen.stats.upgradedAmt[i]; h++) {
+                game.font.draw(batch, ".", x + 10 + 20 * game.gameScreen.stats.upgradedAmt[i] + 20 * h, y);
             }
 
         }
@@ -95,7 +92,7 @@ public class UpgradeScreen extends ScreenAdapter implements InputProcessor {
             float x = 100;
             float y = 160 - d * 50;
             upgradeButtons[d] = new Button(x, y, scl, Assets.stats_screen_plus_button);
-            upgradeButtons[d].draw(batch);
+            upgradeButtons[d].draw(batch, game.font);
         }
 
         for (int d = 0; d < upgradeButtons.length; d++) {
@@ -103,10 +100,10 @@ public class UpgradeScreen extends ScreenAdapter implements InputProcessor {
             float x = 100 + 50;
             float y = 160 - d * 50;
             upgradeButtons1[d] = new Button(x, y, scl, Assets.stats_screen_minus_button);
-            upgradeButtons1[d].draw(batch);
+            upgradeButtons1[d].draw(batch, game.font);
         }
 
-        play.draw(batch);
+        play.draw(batch, game.font);
 
         batch.end();
     }
@@ -149,16 +146,16 @@ public class UpgradeScreen extends ScreenAdapter implements InputProcessor {
         for (int d = 0; d < upgradeButtons.length; d++) {
             Button b = (upgradeButtons[d]);
             if (b.containsPoint(mouseLocation.x, mouseLocation.y)) {
-                if (points > 0) if (stats.upgradeStat(Stats.STATS.get(d), 1)) points -= 1;
+                if (game.gameScreen.points > 0) if (game.gameScreen.stats.upgradeStat(Stats.STATS.get(d), 1)) game.gameScreen.points -= 1;
             }
             b = (upgradeButtons1[d]);
             if (b.containsPoint(mouseLocation.x, mouseLocation.y)) {
-                if (stats.upgradeStat(Stats.STATS.get(d), -1)) points += 1;
+                if (game.gameScreen.stats.upgradeStat(Stats.STATS.get(d), -1)) game.gameScreen.points += 1;
             }
         }
 
         if (play.containsPoint(mouseLocation.x, mouseLocation.y)) {
-            game.set(true);
+            game.set(game.gameScreen);
         }
 
         return false;

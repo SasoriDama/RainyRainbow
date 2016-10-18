@@ -1,21 +1,21 @@
-package com.gdx.rainbow;
+package com.gdx.rainbow.screens;
 
 
 import com.badlogic.gdx.*;
 import com.badlogic.gdx.graphics.*;
 import com.badlogic.gdx.graphics.Color;
-import com.badlogic.gdx.graphics.g2d.TextureRegion;
-import com.badlogic.gdx.graphics.g3d.particles.ResourceData;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.utils.viewport.FillViewport;
+import com.gdx.rainbow.*;
+import com.gdx.rainbow.screens.upgrade.stats.Stats;
 import com.gdx.rainbow.objects.*;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.*;
 import com.gdx.rainbow.objects.Object;
 import com.gdx.rainbow.particles.*;
+import com.gdx.rainbow.screens.menus.utils.Button;
 import com.badlogic.gdx.utils.viewport.Viewport;
-import net.dermetfan.gdx.assets.AnnotationAssetManager;
 import net.dermetfan.gdx.graphics.g2d.AnimatedBox2DSprite;
 
 
@@ -28,77 +28,93 @@ public class GameScreen extends ScreenAdapter implements InputProcessor {
 
     MyGdxGame game;
 
-    OrthographicCamera guiCam;
-    Viewport viewport;
+    public static Selectable MODE = Selectable.MODE_DEFUALT;
 
-    public static boolean TESTING = false;
+    private Viewport viewport;
+    private OrthographicCamera guiCam;
+
+    Vector2 mouseLocation;
+
+    private boolean inputHeld = false;
 
     public static float UNIT_WIDTH = MyGdxGame.WIDTH/256f;
     public static float UNIT_HEIGHT = MyGdxGame.HEIGHT/256f;
 
     public static float ELAPSED_TIME = 0;
 
+    public Score score;
+
     public World world;
+
+    private Player player;
+
+    public Selectable SELECTED_CHARACTER;
+
     public ArrayList<Object> objects, removedObjects;
-    public ArrayList<Cloud> sunClouds;
-    Player player;
-    Stats stats = Stats.STARTING_STATS;
-    public int points = Stats.STATS.size() * Stats.NUM_OF_UPGRADES;
+    private ArrayList<Cloud> sunClouds;
 
-    Stats prePowerUpStats = null;
+    private boolean rareCloudAlreadySpawnedThisLevel;
+    private float chanceOfRareCloud;
 
-    int level = 0;
-
-    Sunbeam sunBeam;
-    ParticleSystem rainParticles;
-    ParticleSystem blowParticles;
-    ParticleSystem stormCloudParticles;
-    ParticleSystem powerUpLightningParticles;
-    ParticleSystem rainbowTrail;
-
-    float newBeamLocation = 0;
-
-    float beamTimer = 0;
-    float nextBeamTime = 5;
-
-    float cloudTimer = 0;
-    float nextCloudTime = 5;
-
-    float windTimer = 0;
-    float windTime = 3;
-    float maxWindForce;
-
-    float powerUpTimer = 0;
-
-    float loseTimer = 0;
-    float wonTimer = 0;
-
-    //timer which manages how long the player should get a drag force when returning from a powerup. Without a drag force the player goes flying from the change in accleration
-    //but without a timer the drag force is applied all the time
-    float playerDragTimer = 0;
-
-    Vector2 mouseLocation;
-    float playerAngleToFocusedCloudInDegrees = 0;
-    float playerRotation = 0;
-    int numOfRainParticlesPerFrame = 2;
-    private boolean inputHeld = false;
     private Cloud focusedCloud = null;
     private Cloud winCloud = null;
 
-    //move this to player class at some point and move render code involving these values and delta into handle player anim method of gamescreen class
-    float yScl = 1;
-    float xScl = 1;
-    float playerSclOff = 1;
+    //Hidden cloud for clear skies mode that is never drawn and always is placed at center of beam
+    //used entirely for timer purposes in new game mode
+    private ClearSkiesCloud clearSkiesCloud;
 
-    public static float WIN_TIME = 10;
-    public static float LOSE_TIME = 10 * 5;
-    public static float POWER_UP_TIME = 10;
+    public Stats stats = null;
+    private Stats prePowerUpStats = null;
 
+    public int points;
 
-    public static float RAINBOW_DRAW_TIME = 2;
-    public static float WON_TIME = RAINBOW_DRAW_TIME + 5;
+    public int level;
 
     public Vector2 windForce;
+
+    private ParticleSystem rainParticles;
+
+    private int numOfRainParticlesPerFrame = 2;
+
+    private ParticleSystem blowParticles;
+    private ParticleSystem stormCloudParticles;
+    private ParticleSystem lightningTrail;
+    private ParticleSystem rainbowTrail;
+    private Lightning lightning;
+
+    private Sunbeam sunBeam;
+
+    private float newBeamLocation = 0;
+    private float beamTimer = 0;
+    private float nextBeamTime = 5;
+
+    private float cloudTimer = 0;
+    private float nextCloudTime = 5;
+
+    private float windTimer = 0;
+    private float windTime = 3;
+    private float maxWindForce;
+
+    private float powerUpTimer = 0;
+    public static float POWER_UP_TIME = 10;
+
+    private float loseTimer = 0;
+    public static float LOSE_TIME = 10 * 5;
+
+    //timer which manages how long the player should get a drag force when returning from a powerup. Without a drag force the player goes flying from the change in accleration
+    //but without a timer the drag force is applied all the time
+    private float playerDragTimer = 0;
+
+    private float playerAngleToFocusedCloudInDegrees = 0;
+    private float playerRotation = 0;
+
+    public static float WIN_TIME = 10;
+
+    private float wonTimer = 0;
+    public static float RAINBOW_DRAW_TIME = 2;
+    public static float WON_TIME = .5f;//RAINBOW_DRAW_TIME + 5;
+
+    private Button help_button;
 
     //Temporary Shape Renderer
     ShapeRenderer sr;
@@ -106,8 +122,7 @@ public class GameScreen extends ScreenAdapter implements InputProcessor {
     public GameScreen(MyGdxGame game) {
 
         this.game = game;
-        sr = new ShapeRenderer();
-        //Gdx.input.setInputProcessor(this);
+        //sr = new ShapeRenderer();
         mouseLocation = new Vector2();
         guiCam = new OrthographicCamera();
         viewport = new FillViewport(UNIT_WIDTH, UNIT_HEIGHT, guiCam);
@@ -116,27 +131,15 @@ public class GameScreen extends ScreenAdapter implements InputProcessor {
 
         guiCam.position.set(0, 0, 0);
 
-
-        if (TESTING) WIN_TIME = 1;
         //guiCam.zoom = 2;
 
-        //UNIT_WIDTH *= guiCam.zoom;
-        //UNIT_HEIGHT *= guiCam.zoom;
+        world = new World(Vector2.Zero, true);
 
-        world = new World(new Vector2(0, 0), true);
+        score = new Score();
 
-        rainParticles = new ParticleSystem(ParticleSystemInfo.RAIN);
-        blowParticles = new ParticleSystem(ParticleSystemInfo.BLOW);
-        blowParticles.info.fadeIn = true;
-        stormCloudParticles = new ParticleSystem(ParticleSystemInfo.STORM_CLOUDS);
-        stormCloudParticles.info.xMin = (-4) * 1.3f;//(loseTimer/GameScreen.LOSE_TIME);
-        stormCloudParticles.info.xMax = (4) * 1;//(loseTimer/GameScreen.LOSE_TIME);
-        stormCloudParticles.info.initialVelocity = new Vector2(.125f * .5f, 0);
-        stormCloudParticles.position.set(0, GameScreen.UNIT_HEIGHT/2);
-        stormCloudParticles.nextParticleTimer = stormCloudParticles.info.nextParticleTime;
+        help_button = new Button(-GameScreen.UNIT_WIDTH/2 + .5f, -GameScreen.UNIT_HEIGHT/2 + .5f, .001f, Assets.help_button);
 
-        powerUpLightningParticles = new ParticleSystem(ParticleSystemInfo.PLAYER_LIGHTNING_TRAIL);
-        rainbowTrail = new ParticleSystem(ParticleSystemInfo.PLAYER_RAINBOW_TRAIL);
+        this.createParticleSystems();
 
         objects = new ArrayList<Object>();
         removedObjects = new ArrayList<Object>();
@@ -144,31 +147,50 @@ public class GameScreen extends ScreenAdapter implements InputProcessor {
 
         windForce = new Vector2();
 
-        if (GameScreen.TESTING) System.out.println("TESTING MODE ENABLED");
+        if (MODE == Selectable.MODE_CLEAR_SKIES) {
+            nextCloudTime = 2.0f;
+            WIN_TIME *= 1.5f;
+        }
 
-        startLevel(level);
+        resetPlayThrough();
+        startLevel();
+    }
 
-        prePowerUpStats = player.stats;
+    private void createParticleSystems() {
+
+        rainParticles = new ParticleSystem(ParticleSystemInfo.RAIN);
+        blowParticles = new ParticleSystem(ParticleSystemInfo.BLOW);
+        blowParticles.info.fadeIn = true;
+        stormCloudParticles = new ParticleSystem(ParticleSystemInfo.STORM_CLOUDS);
+        stormCloudParticles.info.xMin = (-4) * 1.3f;
+        stormCloudParticles.info.xMax = (4) * 1;
+        stormCloudParticles.info.initialVelocity = new Vector2(.125f * .5f, 0);
+        stormCloudParticles.position.set(0, GameScreen.UNIT_HEIGHT/2);
+        stormCloudParticles.nextParticleTimer = stormCloudParticles.info.nextParticleTime;
+
+        lightningTrail = new ParticleSystem(ParticleSystemInfo.PLAYER_LIGHTNING_TRAIL);
+        rainbowTrail = new ParticleSystem(ParticleSystemInfo.PLAYER_RAINBOW_TRAIL);
+
+        lightning = new Lightning();
 
     }
 
     public void update(float delta) {
         world.step(delta, 6, 2);
 
-        Assets.playMusic(Assets.rain_sound);
+        if (help_button.isPressed()) {
+            game.set(game.helpScreen);
+        }
+
+        if (MODE != Selectable.MODE_CLEAR_SKIES) Assets.playMusic(Assets.rain_sound);
+
+        if (MODE == Selectable.MODE_CLEAR_SKIES) {
+            clearSkiesCloud.body.setTransform((sunBeam.xCenterTop + sunBeam.xCenterBottom) * .5f, 0, 0);
+        }
+
+        score.percentOfTimeLeft = (1f - loseTimer/GameScreen.LOSE_TIME);
 
         //YOU STILL HAVE TO CLEAN DRAW FUNCTION
-        //System.out.println("Objects: " + objects.size() + " Objects Removed This Frame: " + removedObjects.size());
-        //System.out.println("SunClouds: " + sunClouds.size());
-
-       // System.out.println(player.stats == Stats.STARTING_STATS);
-
-        //if (Gdx.input.isKeyPressed(Input.Keys.G)) {
-         //   if (player.stats == Stats.STARTING_STATS) player.stats = Stats.END_STATS;
-          //  else {
-           //     player.stats = Stats.STARTING_STATS;
-            //}
-        //}
 
         if (Gdx.input.isKeyPressed(Input.Keys.W)) {
             Cloud c = (Cloud) Object.createObject(Object.CLOUD);
@@ -184,8 +206,6 @@ public class GameScreen extends ScreenAdapter implements InputProcessor {
             powerUpTimer = GameScreen.POWER_UP_TIME;
         }
 
-        //if (player.body.getLinearVelocity().len() > 0) System.out.println(player.body.getLinearVelocity().len());
-        //if (player.body.getLinearVelocity().len() >= player.stats.speed) System.out.println("capped");
 
         this.handleTimers(delta);
         this.handlePlayerInput(delta);
@@ -208,7 +228,6 @@ public class GameScreen extends ScreenAdapter implements InputProcessor {
                 this.applyDragForce(player);
             }
         }
-        //
 
         this.handleParticles(delta);
 
@@ -232,13 +251,19 @@ public class GameScreen extends ScreenAdapter implements InputProcessor {
     }
 
     private void handleParticles(float delta) {
-        rainParticles.update(delta, numOfRainParticlesPerFrame);
+
+        if (MODE != Selectable.MODE_CLEAR_SKIES) {
+            lightning.update(delta);
+            rainParticles.update(delta, numOfRainParticlesPerFrame);
+        }
         blowParticles.update(delta, 1);
         blowParticles.position = player.body.getPosition();
 
         if (Math.abs(powerUpTimer - GameScreen.POWER_UP_TIME) < .02f) {
-            rainParticles.createLightning();
+            lightning.createLightning();
         }
+
+        if (focusedCloud instanceof ClearSkiesCloud) focusedCloud = null;
 
         if (focusedCloud != null) {
             Vector2 blowVel = new Vector2();
@@ -247,7 +272,7 @@ public class GameScreen extends ScreenAdapter implements InputProcessor {
             blowVel.set(x, y);
 
             blowVel.nor();
-            float f = .4f + (.6f - .4f) * (player.stats.pushStrength/Stats.PUSH_STRENGTH.endVal);
+            float f = .4f + (.6f - .4f) * (player.stats.pushStrength/ Stats.PUSH_STRENGTH.endVal);
             float xDir = 1;
             float yDir = 1;
             if (blowVel.x < 0) xDir = -1;
@@ -255,11 +280,11 @@ public class GameScreen extends ScreenAdapter implements InputProcessor {
 
             blowVel.add(xDir * MathUtils.random(0, f), yDir * MathUtils.random(0, f));
 
-            blowVel.scl(1f + .75f * (player.stats.pushRange/Stats.PUSH_RANGE.endVal));
+            blowVel.scl(1f + .75f * (player.stats.pushRange/ Stats.PUSH_RANGE.endVal));
             Vector2 offset = blowVel.cpy().nor().scl(.1f);
             Vector2 accel = blowVel.cpy().nor().scl(-.002f);
 
-            if (powerUpTimer > 0) {
+            if (SELECTED_CHARACTER == Selectable.CHARACTER_STORM) {
                 blowVel.scl(-1);
                 offset.scl(30);
             }
@@ -274,23 +299,35 @@ public class GameScreen extends ScreenAdapter implements InputProcessor {
 
             Color colorOffset = new Color(cR, cG, cB, .45f);
 
-            //float delay = .0000001f;
-            float delay = .05f + (.0000001f - .05f) * (player.stats.pushStrength/Stats.PUSH_STRENGTH.endVal);
+            float delay = .05f + (.0000001f - .05f) * (player.stats.pushStrength/ Stats.PUSH_STRENGTH.endVal);
 
-            blowParticles.info.endSize = 3.3f * (1 + .5f * (player.stats.pushStrength/Stats.PUSH_STRENGTH.endVal));
+            blowParticles.info.endSize = 3.3f * (1 + .5f * (player.stats.pushStrength/ Stats.PUSH_STRENGTH.endVal));
             blowParticles.createParticleWithDelay(delay, offset, colorOffset, blowVel, accel);
 
         }
 
         stormCloudParticles.update(delta, (int) (1));//(loseTimer/GameScreen.LOSE_TIME)));
-        //stormCloudParticles.info.color.set(.96f * (1f - .55f*(loseTimer/GameScreen.LOSE_TIME)), (1f - .55f*((loseTimer/GameScreen.LOSE_TIME))), (1f - .5f*(loseTimer/GameScreen.LOSE_TIME)), 1);
 
         float cO = MathUtils.random(.75f * (1f - 2f*(loseTimer/GameScreen.LOSE_TIME)), 1f);
 
         float cB = cO + .01f;
         if (cB > 1) cB = 1f;
 
+        //NOT FUNCTIONINNG CORRECTLY
+        //Clouds fade away as you win in clear skies mode
+        float m = 1;
+        if (MODE == Selectable.MODE_CLEAR_SKIES) {
+            m = (1f - (wonTimer*3f/WON_TIME));
+            if (m < 0) m = 0;
+            stormCloudParticles.info.color.a *= m;
+        }
+
+
         stormCloudParticles.colorOffset = new Color(cO, cO, cB, .5f);
+
+        //the particles for the bottom wall of clouds powerup
+        int particlesToSpawnPerFrame = 0;
+        if (powerUpTimer > 0) particlesToSpawnPerFrame = 1;
 
         rainbowTrail.update(delta, 0);
         rainbowTrail.position = player.body.getPosition();
@@ -303,9 +340,10 @@ public class GameScreen extends ScreenAdapter implements InputProcessor {
 
         }
 
-        powerUpLightningParticles.update(delta, 0);
+        lightningTrail.update(delta, 0);
 
-        if (powerUpTimer > 0) {
+
+        if (SELECTED_CHARACTER == Selectable.CHARACTER_STORM) {
             float r1 = MathUtils.random(-1f, 1f);
             float r2 = MathUtils.random(-1f, 1f);
             float angle = 180 - (180 / MathUtils.PI) * (float) Math.acos(player.body.getLinearVelocity().cpy().add(r1, r2).nor().dot(1, 0));
@@ -314,37 +352,29 @@ public class GameScreen extends ScreenAdapter implements InputProcessor {
             float f = .125f * MathUtils.sin(GameScreen.ELAPSED_TIME * 30);
 
             v.set(f * MathUtils.cosDeg(angle), f * MathUtils.sinDeg(angle));
-            powerUpLightningParticles.info.angleOffset = angle + f + 15;
-            powerUpLightningParticles.position.set(player.body.getPosition().cpy());
+            lightningTrail.info.angleOffset = angle + f + 15;
+            lightningTrail.position.set(player.body.getPosition().cpy());
             Vector2 offset = new Vector2();
             offset.set(player.body.getLinearVelocity().nor());
             offset.scl(-.2f);
             offset.add(v);
-            //if (player.body.getLinearVelocity().len() > .2555f * player.stats.speed) {
-            //if (player.body.getLinearVelocity().len() > .8f * player.stats.speed) {
             if (player.body.getLinearVelocity().len() > .5f * player.stats.speed) {
-                //powerUpLightningParticles.createParticleWithDelay(.001f, offset, Vector2.Zero, Vector2.Zero);
-
-                //this one
-                powerUpLightningParticles.createParticleWithDelay(.01f, offset, Vector2.Zero, Vector2.Zero);
-
-
-                //powerUpLightningParticles.createParticleWithDelay(.25f/2f, offset, Vector2.Zero, Vector2.Zero);
+                lightningTrail.createParticleWithDelay(.01f, offset, Vector2.Zero, Vector2.Zero);
                 if (!Assets.lightning_particle_sound.isPlaying()) Assets.lightning_particle_sound.play();
             } else {
-                powerUpLightningParticles.clear();
+                lightningTrail.clear();
                 if (Assets.lightning_particle_sound.isPlaying()) Assets.lightning_particle_sound.pause();
             }
         }
         else {
-            powerUpLightningParticles.clear();
+            lightningTrail.clear();
             if (Assets.lightning_particle_sound.isPlaying()) Assets.lightning_particle_sound.pause();
         }
     }
 
     private void handleTimers(float delta) {
         GameScreen.ELAPSED_TIME += delta;
-        loseTimer += delta;
+        if (MODE != Selectable.MODE_ZEN) loseTimer += delta;
 
         windTimer += delta;
         if (windTimer > windTime) {
@@ -353,25 +383,20 @@ public class GameScreen extends ScreenAdapter implements InputProcessor {
         }
 
         if (wonTimer >= WON_TIME) {
-            //game.setScreen(new UpgradeScreen(game, stats));
-            points += 1;
+            int pointsAdded = 1;
+            if (score.wonWithRareCloud) pointsAdded += 1;
+            points += pointsAdded;
             level += 1;
-            game.set(false);
-            startLevel(level);
+            game.winScreen.pointsAdded = pointsAdded;
+            game.set(game.winScreen);
+            score.compoundedScore += score.generateScore();
+            //game.set(MyGdxGame.UPGRADE_SCREEN);
         }
 
         if (loseTimer >= GameScreen.LOSE_TIME) {
             loseTimer = GameScreen.LOSE_TIME;
 
-            boolean atLeastOneCloudHasSun = false;
-            for (Object o: objects) {
-                if (o instanceof Cloud) {
-                    Cloud c = (Cloud) o;
-                    if (c.sunTimer > 0) atLeastOneCloudHasSun = true;
-                }
-            }
-
-            if (!atLeastOneCloudHasSun) this.loseLevel(delta);
+            if (sunClouds.size() != 1) this.loseLevel(delta);
         }
 
         this.cloudTimer += delta;
@@ -411,14 +436,28 @@ public class GameScreen extends ScreenAdapter implements InputProcessor {
 
         //Increments timer of clouds withing beam and checks for win condition
         if (sunClouds.contains(c)) {
-            //Multiply delta * 1/sunClouds.size ??? this will make the timer go up slower for each cloud in sunbeam?
+                //Multiply delta * 1/sunClouds.size ??? this will make the timer go up slower for each cloud in sunbeam?
                 float timeMod = 1;
-                if (player.stats.sunCloudSizeMod != 0) timeMod = 1f/((player.stats.sunCloudSizeMod * sunClouds.size()));
-                if (timeMod > 1) timeMod = 1;
+                if (MODE != Selectable.MODE_CLEAR_SKIES) {
+                    if (player.stats.sunCloudSizeMod != 0)
+                        timeMod = 1f / ((player.stats.sunCloudSizeMod * sunClouds.size()));
+                    if (timeMod > 1) timeMod = 1;
+                }
+
+                if (MODE == Selectable.MODE_CLEAR_SKIES) {
+                    if (!(c instanceof ClearSkiesCloud)) timeMod = 0;
+                    if (wonTimer <= 0 && sunClouds.size() > 1) {
+                        timeMod = -sunClouds.size();
+                        //System.out.println(timeMod);
+                        //timeMod *= (1f - (player.stats.sunCloudSizeMod/Stats.SUN_CLOUD_SIZE_MOD.endVal));
+                    }
+                    if (sunClouds.size() == 1) timeMod = 1;
+                }
+
                 c.handleSunTimer(delta * timeMod);
                 if (c.getWinPercent() == 1) {
-                    this.winLevel(c, delta);
                     powerUpTimer = 0;
+                    this.winLevel(c, delta);
                 }
         }
 
@@ -440,27 +479,35 @@ public class GameScreen extends ScreenAdapter implements InputProcessor {
     }
 
     private void winLevel(Cloud c, float delta) {
-        if (wonTimer >= WON_TIME) {
-            return;
+        if (c instanceof RareCloud) {
+            score.wonWithRareCloud = true;
         }
-        if (wonTimer == 0) Assets.playMusic(Assets.rainbow_sound[MathUtils.random(0, 1)]);
-        //player.stats.speed = Stats.SPEED.endVal;
-        //player.stats.acceleration = Stats.ACCELERATION.endVal;
+        if (wonTimer >= WON_TIME) return;
+        //if (wonTimer == 0) Assets.playMusic(Assets.rainbow_sound[MathUtils.random(0, Assets.rainbow_sound.length - 1)]);
+        else {
+            player.stats.speed = prePowerUpStats.speed;
+            player.stats.acceleration = prePowerUpStats.acceleration;
+        }
         wonTimer += delta;
         if (winCloud == null) winCloud = c;
 
     }
 
-    private void loseLevel(float delta) {
-
+    public void resetPlayThrough() {
+        stats = new Stats();
+        score.reset();
+        level = 0;
+        points = Stats.STATS.size() * Stats.NUM_OF_UPGRADES;//0;
     }
 
-    public void startLevel(int level) {
+    private void loseLevel(float delta) {
+        if (wonTimer > 0) return;
+        game.set(game.loseScreen);
+    }
+
+    public void startLevel() {
 
         System.out.println("LEVEL: " + level);
-
-        if (prePowerUpStats != null) player.stats.speed = prePowerUpStats.speed;
-        if (prePowerUpStats != null) player.stats.acceleration = prePowerUpStats.acceleration;
 
         wonTimer = 0;
         loseTimer = 0;
@@ -471,7 +518,10 @@ public class GameScreen extends ScreenAdapter implements InputProcessor {
         windForce.set(0, 0);
         winCloud = null;
         focusedCloud = null;
-        float sunBeamWidthScl = 1 - (level * .007f);
+        //take width if normal. add with if clear skies
+        int widthMod = -1;
+        if (MODE == Selectable.MODE_CLEAR_SKIES) widthMod = 1;
+        float sunBeamWidthScl = 1 + widthMod * (level * .007f);
         if (sunBeamWidthScl < .4f) sunBeamWidthScl = .4f;
         sunBeam = new Sunbeam(sunBeamWidthScl);
         removedObjects.addAll(objects);
@@ -480,42 +530,43 @@ public class GameScreen extends ScreenAdapter implements InputProcessor {
         Assets.player_win_animation.setTime(0);
         player = (Player) Object.createObject(Object.PLAYER);
         player.set(this, 0, 0, stats);
+        prePowerUpStats = player.stats;
+
+        score.wonWithRareCloud = false;
+        rareCloudAlreadySpawnedThisLevel = false;
+        chanceOfRareCloud = MathUtils.random(.5f, 10f);
 
         //level things
         if (level % 3 == 0) this.numOfRainParticlesPerFrame += 1;
         if (numOfRainParticlesPerFrame > 20) numOfRainParticlesPerFrame = 20;
-        this.nextBeamTime = 5 - (level * .15f);
+        this.nextBeamTime = 5 - (level * .10f);
         if (nextBeamTime < 0) nextBeamTime = 0;
-        sunBeam.speed = 1 + .035f * level;
+        sunBeam.speed = 1 + .018f * level;
         windTime = 6 - (level * .03f);
         if (windTime < 3) windTime = 3;
         maxWindForce += .01f + (.03f * level);
-        maxWindForce *= .25f;
+        maxWindForce *= .20f;
         //System.out.println("Max wind force " + maxWindForce);
-        rainParticles.maxNextLightningTime = 60 - (level * .85f);
-        if (rainParticles.maxNextLightningTime < 0) rainParticles.maxNextLightningTime = 0;
-
-        //blow particle gets longer as push range increases
-        //blowParticles.info.xScale = (.5f + (player.stats.pushRange/Stats.PUSH_RANGE.endVal));
-        //blowParticles.info.xScale *= (1 + 0.5f * (player.stats.pushStrength/Stats.PUSH_STRENGTH.endVal));
-        //blowParticles.info.yScale *= ( 1 + 0.5f * (player.stats.pushStrength/Stats.PUSH_STRENGTH.endVal));
+        lightning.maxNextLightningTime = 60 - (level * .85f);
+        if (lightning.maxNextLightningTime < 0) lightning.maxNextLightningTime = 0;
 
         rainParticles.clear();
         blowParticles.clear();
-        powerUpLightningParticles.clear();
+        lightningTrail.clear();
         rainbowTrail.clear();
 
-        prePowerUpStats = player.stats;
-
-
-        //if (TESTING) {
-        if (level == 0) {
+        if (level == 0 && MODE != Selectable.MODE_CLEAR_SKIES) {
             //Object o = Object.createObject(Object.POWER_UP);
             //o.set(this, 0, 0);
             Cloud c = (Cloud) Object.createObject(Object.CLOUD);
-            c.set(this, 0, 0, new Vector2(0, 0));
+            c.set(this, 0, 0, Vector2.Zero);
         }
-        //}
+
+        if (MODE == Selectable.MODE_CLEAR_SKIES) {
+            clearSkiesCloud = (ClearSkiesCloud) Object.createObject(Object.CLEAR_SKIES_CLOUD);
+            clearSkiesCloud.set(this, 0, 0, Vector2.Zero);
+        }
+
     }
 
     private void movePlayerTowards(Vector2 endLocation) {
@@ -539,7 +590,7 @@ public class GameScreen extends ScreenAdapter implements InputProcessor {
         if (o instanceof Player) {
             //dragForce.scl(.35f);
             dragForce.scl(.85f);
-            dragForce.scl((player.stats.acceleration/Stats.ACCELERATION.endVal));
+            dragForce.scl((player.stats.acceleration/ Stats.ACCELERATION.endVal));
         }
         if (o instanceof Cloud) dragForce.scl(.10f);
         o.body.applyForce(dragForce, o.body.getPosition(), true);
@@ -555,65 +606,34 @@ public class GameScreen extends ScreenAdapter implements InputProcessor {
         boolean left = MathUtils.randomBoolean();
 
         if (left) {
-            x = -GameScreen.UNIT_WIDTH/2;
+            x = -GameScreen.UNIT_WIDTH / 2;
             initialVel.x = 1f;
         }
         if (!left) {
-            x = GameScreen.UNIT_WIDTH/2;
+            x = GameScreen.UNIT_WIDTH / 2;
             initialVel.x = -1f;
         }
 
-        y = MathUtils.random(-GameScreen.UNIT_HEIGHT/2 + 1.f, GameScreen.UNIT_HEIGHT/2 - 1.5f);
+        y = MathUtils.random(-GameScreen.UNIT_HEIGHT / 2 + 1.f, GameScreen.UNIT_HEIGHT / 2 - 1.5f);
 
         int ID = Object.CLOUD;
-        if (MathUtils.random(0f, 1f) < (1) * (level/70f)) {
+        if (MathUtils.random(0f, 1f) < (1) * (level / 70f)) {
             ID = Object.DENSE_CLOUD;
+        }
+
+        if (MODE != Selectable.MODE_CLEAR_SKIES && !rareCloudAlreadySpawnedThisLevel) {
+            if (MathUtils.random(0f, 100f) < chanceOfRareCloud) {
+                ID = Object.RARE_CLOUD;
+                rareCloudAlreadySpawnedThisLevel = true;
+            }
+        }
+
+        if (MODE == Selectable.MODE_CLEAR_SKIES) {
+            initialVel.scl(.5f + (.5f * (1f + level/80f)));
         }
 
         Cloud c = (Cloud) Object.createObject(ID);
         c.set(this, x, y, initialVel);
-    }
-
-    private void pushCloudAwayFromPlayer(Cloud c) {
-        Vector2 force = new Vector2(0, 0);
-        Vector2 startLocation = c.body.getPosition();
-        Vector2 endLocation = player.body.getPosition();
-        //vector between desination and player;
-        float dx = endLocation.x - startLocation.x;
-        float dy = endLocation.y - startLocation.y;
-        float xDir = 1;
-        float yDir = 1;
-        if (dx < 0) xDir = -1;
-        if (dy < 0) yDir = -1;
-        if (Math.abs(dx) < .4f) dx = .4f * xDir;
-        if (Math.abs(dy) < .4f) dy = .4f * yDir;
-        force.set(1/dx, 1/dy);
-        force.scl(-.2f * .4f);
-        force.scl(1, .5f);
-        force.scl(player.stats.pushStrength);
-        c.body.applyForce(force, c.body.getPosition(), true);
-        force.scl(1/player.stats.pushStrength);
-        //Push Player away from cloud
-        force.scl(-player.stats.pushBackForce);
-        player.body.applyForce(force, player.body.getPosition(), true);
-    }
-
-    private void suckCloudTowardsPlayer(Cloud c) {
-        Vector2 force = new Vector2(0, 0);
-        Vector2 startLocation = c.body.getPosition();
-        Vector2 endLocation = player.body.getPosition();
-        //vector between desination and player;
-        float dx = endLocation.x - startLocation.x;
-        float dy = endLocation.y - startLocation.y;
-        float xDir = 1;
-        float yDir = 1;
-        if (dx < 0) xDir = -1;
-        if (dy < 0) yDir = -1;
-        if (Math.abs(dx) < .4f) dx = .4f * xDir;
-        if (Math.abs(dy) < .4f) dy = .4f * yDir;
-        force.set(dx, dy);
-        force.scl(.2f * .4f);
-        c.body.applyForce(force, c.body.getPosition(), true);
     }
 
     private void pickNewWindForce() {
@@ -640,9 +660,7 @@ public class GameScreen extends ScreenAdapter implements InputProcessor {
             focusedCloud.pushedTimer += delta * .05f * (1/focusedCloud.pushedTimer);
             if (focusedCloud.pushedTimer >= Cloud.PUSH_TIME) focusedCloud.pushedTimer = Cloud.PUSH_TIME;
             //
-
-            if (powerUpTimer <= 0) this.pushCloudAwayFromPlayer(focusedCloud);
-            if (powerUpTimer >= 0) this.suckCloudTowardsPlayer(focusedCloud);
+            player.manipulateCloud(focusedCloud, SELECTED_CHARACTER);
 
             // player stops pushing if cloud is out of range or no longer tap held
             if (player.body.getPosition().dst(focusedCloud.body.getPosition()) > player.stats.pushRange) focusedCloud = null;
@@ -698,11 +716,12 @@ public class GameScreen extends ScreenAdapter implements InputProcessor {
         else {
             if (player.getSprite() instanceof AnimatedBox2DSprite) {
                 AnimatedBox2DSprite a = ((AnimatedBox2DSprite) player.getSprite());
-                if (a.isAnimationFinished()) player.setSprite(Assets.player_image);
+                if (a.isAnimationFinished()) player.setSprite(Assets.player_default_image);
             }
 
             else {
-                player.setSprite(Assets.player_image);
+
+                player.setSprite(Assets.player_default_image);
                 //Ensure next animation beginds on first frame
                 //Perhaps store last animation used and set its time to zero to be more general
                 Assets.player_blowing_animation.setTime(0);
@@ -718,6 +737,7 @@ public class GameScreen extends ScreenAdapter implements InputProcessor {
         for (Object o: removedObjects) {
             if (objects.contains(o)) {
                 objects.remove(o);
+                world.destroyBody(o.body);
             }
         }
 
@@ -742,35 +762,35 @@ public class GameScreen extends ScreenAdapter implements InputProcessor {
         //game.batcher.draw(Assets.lightning_image, -GameScreen.UNIT_WIDTH/2, -GameScreen.UNIT_HEIGHT/2);
         //game.batcher.setColor(1, 1, 1, 1);
 
-        powerUpLightningParticles.drawParticles(game.batcher);
+        lightningTrail.drawParticles(game.batcher);
         rainbowTrail.drawParticles(game.batcher);
 
-        if (powerUpTimer > 0) {
-            player.setSprite(Assets.player_poweredup_image);
+        if (SELECTED_CHARACTER == Selectable.CHARACTER_STORM) {
+            player.setSprite(Assets.player_storm_image);
         }
 
         if (focusedCloud != null) {
             if (inputHeld) {
-                float pushStrengthPer = player.stats.pushStrength/Stats.PUSH_STRENGTH.endVal;
-                if (player.blowTimer < .6f) if (playerSclOff < (1.6f * (1 + 1.5f * pushStrengthPer))) playerSclOff += 1.15f * (1 + .55f * pushStrengthPer) * delta;
+                float pushStrengthPer = player.stats.pushStrength/ Stats.PUSH_STRENGTH.endVal;
+                if (player.blowTimer < .6f) if (player.sclOff < (1.6f * (1 + 1.5f * pushStrengthPer))) player.sclOff += 1.15f * (1 + .55f * pushStrengthPer) * delta;
                 if (player.blowTimer > .6f) {
-                    if (playerSclOff > 1) {
-                        playerSclOff -= 1.25f * delta;
+                    if (player.sclOff > 1) {
+                        player.sclOff -= 1.25f * delta;
                     }
                 }
 
                 if (player.blowTimer < MathUtils.PI) player.blowTimer += delta * 3;
                 if (player.blowTimer > MathUtils.PI) player.blowTimer = 0;
-                yScl = 1 - ((.15f * (1 + 1.5f * pushStrengthPer)) * MathUtils.sin(player.blowTimer - 1.f));
-                xScl = 1 + ((.15f * (1 + 1.5f * pushStrengthPer)) * MathUtils.sin(player.blowTimer - 1.f));
+                player.yScl = 1 - ((.2f * (1 + 1.5f * pushStrengthPer)) * MathUtils.sin(player.blowTimer - 1.f));
+                player.xScl = 1 + ((.2f * (1 + 1.5f * pushStrengthPer)) * MathUtils.sin(player.blowTimer - 1.f));
             }
         }
 
         if (focusedCloud == null) {
             player.blowTimer = 0;
-            yScl -= (yScl - 1) * 4f * delta;
-            xScl -= (xScl - 1) * 4f * delta;
-            playerSclOff -= (playerSclOff - 1) * 7 * delta;
+            player.yScl -= (player.yScl - 1) * 4f * delta;
+            player.xScl -= (player.xScl - 1) * 4f * delta;
+            player.sclOff -= (player.sclOff - 1) * 7 * delta;
         }
 
         //repeat animation
@@ -782,11 +802,12 @@ public class GameScreen extends ScreenAdapter implements InputProcessor {
             }
         }
 
-        player.getSprite().setScale(1.2f * playerSclOff);
-        player.getSprite().setScale(player.getSprite().getScaleX() * xScl, player.getSprite().getScaleY() * yScl);
+        player.getSprite().setScale(1.2f * player.sclOff);
+        player.getSprite().setScale(player.getSprite().getScaleX() * player.xScl, player.getSprite().getScaleY() * player.yScl);
         player.getSprite().setRotation(playerRotation);
 
         for (Object o: objects) {
+            if (o instanceof ClearSkiesCloud) continue;
             if (! (o instanceof  Cloud)) o.getSprite().draw(game.batcher, o.body);
             Assets.cloud_image.setAlpha(Assets.CLOUD_ALPHA);
             if (o instanceof Cloud) {
@@ -806,9 +827,9 @@ public class GameScreen extends ScreenAdapter implements InputProcessor {
                 o.getSprite().setScale(scale);// + (.16f * MathUtils.sin(GameScreen.ELAPSED_TIME + o.timerOffset)));
                 if (o == winCloud) winCloud.drawRainbow(game.batcher, (wonTimer/RAINBOW_DRAW_TIME));
                 float cloudYOff = (.07f) * (MathUtils.sin(GameScreen.ELAPSED_TIME  + o.timerOffset * .85f * (((Cloud) o).getWinPercent() + 1)));
-                c.image.draw(game.batcher, o.body.getPosition().x, o.body.getPosition().y + cloudYOff, Cloud.WIDTH * Assets.CLOUD_IMAGE_SCALE, Cloud.HEIGHT * Assets.CLOUD_IMAGE_SCALE, 0);
-                c.image.setScale(Assets.CLOUD_IMAGE_SCALE);
-                c.image.setAlpha(Assets.CLOUD_ALPHA);
+                c.getSprite().draw(game.batcher, o.body.getPosition().x, o.body.getPosition().y + cloudYOff, Cloud.WIDTH * Assets.CLOUD_IMAGE_SCALE, Cloud.HEIGHT * Assets.CLOUD_IMAGE_SCALE, 0);
+                c.getSprite().setScale(Assets.CLOUD_IMAGE_SCALE);
+                c.getSprite().setAlpha(Assets.CLOUD_ALPHA);
             }
             game.batcher.setColor(1, 1, 1, 1);
         }
@@ -842,31 +863,12 @@ public class GameScreen extends ScreenAdapter implements InputProcessor {
         }
         */
 
-        //rainParticles.drawParticlesTwo(sr);
         //sr.end();
 
-
         //game.batcher.begin();
-        rainParticles.drawParticles(game.batcher);
+        if (MODE != Selectable.MODE_CLEAR_SKIES) rainParticles.drawParticles(game.batcher);
         blowParticles.drawParticles(game.batcher);
         stormCloudParticles.drawParticles(game.batcher);
-
-
-        //storm cloud that displayslose timer
-
-        /*
-        TextureRegion r = new TextureRegion(Assets.storm_cloud_particle);
-        for (int i = 0; i < 20; i++) {
-            game.batcher.setColor(.5f, .5f, .5f, .8f - (.025f * i));
-            float dir = 1;
-            if (i % 2 == 0) dir = -1;
-            float width = .07f;
-            float height = .07f;
-            game.batcher.draw(r, -r.getRegionWidth()/2, r.getRegionHeight()/2);
-            game.batcher.setColor(1, 1, 1, 1);
-        }
-        */
-
         for (Object o: objects) {
             if (o instanceof Cloud) {
                 Cloud c = (Cloud) o;
@@ -874,7 +876,7 @@ public class GameScreen extends ScreenAdapter implements InputProcessor {
             }
         }
 
-        rainParticles.drawLightning(game.batcher);
+        lightning.drawLightning(game.batcher);
 
 
         //allows me filter the games color
@@ -884,6 +886,8 @@ public class GameScreen extends ScreenAdapter implements InputProcessor {
 
         float a = 1;
         a = ((loseTimer/GameScreen.LOSE_TIME)) * (1 - (wonTimer/WON_TIME));
+
+        help_button.draw(game.batcher, game.font);
 
         game.batcher.setColor(.4f, .4f, .45f, .4f * a);
         game.batcher.draw(Assets.lightning_image, -GameScreen.UNIT_WIDTH/2, -GameScreen.UNIT_HEIGHT/2);
@@ -949,6 +953,10 @@ public class GameScreen extends ScreenAdapter implements InputProcessor {
                     focusedCloud = (Cloud) o;
                 }
             }
+        }
+
+        if (help_button.containsPoint(mouseLocation.x, mouseLocation.y)) {
+            help_button.pressed = true;
         }
 
         return false;

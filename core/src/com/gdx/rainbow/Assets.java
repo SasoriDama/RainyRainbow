@@ -18,6 +18,13 @@ public class Assets {
     public static final float CLOUD_IMAGE_SCALE = 1.65f;
     public static final float CLOUD_ALPHA = .7f;
 
+    public static Texture main_menu_background_image;
+    public static Texture[] game_mode_images = new Texture[3];
+    public static Texture[] character_images = new Texture[2];
+    public static Texture help_screen_background;
+    public static Texture help_button;
+    public static Texture button_up;
+    public static Texture button_down;
     public static Texture background_image;
     public static Texture sun_timer_image;
     public static Texture sun_timer_tick_image;
@@ -27,10 +34,11 @@ public class Assets {
     public static Texture lightning_image;
     public static Texture lightning_bolt_image;
     public static Texture blow_air_image;
-    public static Box2DSprite player_image;
-    public static Box2DSprite player_poweredup_image;
+    public static Box2DSprite player_default_image;
+    public static Box2DSprite player_storm_image;
     public static Box2DSprite cloud_image;
     public static Box2DSprite dense_cloud_image;
+    public static Box2DSprite rare_cloud_image;
 
     public static AnimatedBox2DSprite player_blowing_animation;
     public static AnimatedBox2DSprite player_blowing_animation_flipped;
@@ -39,11 +47,12 @@ public class Assets {
     public static Texture stats_screen_plus_button;
     public static Texture stats_screen_minus_button;
 
+    //public static Music button_pressed_sound;
     public static Music blow_sound;
     public static Music rain_sound;
     public static Music thunder_sound;
     public static Music lightning_particle_sound;
-    public static Music[] rainbow_sound = new Music[2];
+    public static Music[] rainbow_sound = new Music[1];
 
     public static Texture loadTexture (String file) {
         return new Texture(Gdx.files.internal(file));
@@ -56,6 +65,16 @@ public class Assets {
 
     public static void load() {
 
+        main_menu_background_image = loadTexture("data/main_menu_background.png");
+        game_mode_images[0] = loadTexture("data/mode_normal.png");
+        game_mode_images[1] = loadTexture("data/mode_clear_skies.png");
+        game_mode_images[2] = loadTexture("data/mode_zen.png");
+        character_images[0] = loadTexture("data/player.png");
+        character_images[1] = loadTexture("data/player_powerup_two.png");
+        help_screen_background = loadTexture("data/help_screen.png");
+        button_up = loadTexture("data/button.png");
+        button_down = loadTexture("data/button_pressed.png");
+        help_button = loadTexture("data/help_button.png");
         background_image = loadTexture("data/backgroundthree.png");
         sun_timer_image = loadTexture("data/sun_timer_five.png");
         sun_timer_tick_image = loadTexture("data/sun_tick_four.png");
@@ -65,20 +84,24 @@ public class Assets {
         lightning_image = loadTexture("data/lightning.png");
         lightning_bolt_image = loadTexture("data/lightning_particle.png");
         blow_air_image = loadTexture("data/blow_particle.png");
-        player_image = loadBox2DSprite("data/player.png");
-        player_poweredup_image = loadBox2DSprite("data/player_powerup_two.png");
+        player_default_image = loadBox2DSprite("data/player.png");
+        player_storm_image = loadBox2DSprite("data/player_powerup_two.png");
         cloud_image = loadBox2DSprite("data/cloud_one.png");
         cloud_image.setScale(CLOUD_IMAGE_SCALE);
         dense_cloud_image = loadBox2DSprite("data/dense_cloud.png");
         dense_cloud_image.setScale(CLOUD_IMAGE_SCALE);
+        rare_cloud_image = loadBox2DSprite("data/gold_cloud.png");
+        rare_cloud_image.setScale(CLOUD_IMAGE_SCALE);
 
+        //button_pressed_sound = Gdx.audio.newMusic(Gdx.files.internal("data/sounds/button_click.wav"));
         blow_sound = Gdx.audio.newMusic(Gdx.files.internal("data/sounds/blow_sound_three.wav"));
         rain_sound = Gdx.audio.newMusic(Gdx.files.internal("data/sounds/rain_sound.wav"));
         thunder_sound = Gdx.audio.newMusic(Gdx.files.internal("data/sounds/thunder_one.wav"));
         lightning_particle_sound = Gdx.audio.newMusic(Gdx.files.internal("data/sounds/chirping_lightning.mp3"));
         lightning_particle_sound.setVolume(.25f);
-        rainbow_sound[0] = Gdx.audio.newMusic(Gdx.files.internal("data/sounds/rainbow_sound_one.wav"));
-        rainbow_sound[1] = Gdx.audio.newMusic(Gdx.files.internal("data/sounds/rainbow_sound_two.wav"));
+        rainbow_sound[0] = Gdx.audio.newMusic(Gdx.files.internal("data/sounds/zelda_harp.wav"));
+        rainbow_sound[0].setVolume(.5f);
+        //rainbow_sound[1] = Gdx.audio.newMusic(Gdx.files.internal("data/sounds/rainbow_sound_two.wav"));
 
         Texture temp = loadTexture("data/player_blow_animation.png");
         TextureRegion t1 = new TextureRegion(temp, 0, 0, 256, 256);

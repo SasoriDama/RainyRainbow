@@ -1,9 +1,6 @@
 package com.gdx.rainbow;
 
-import com.badlogic.gdx.Game;
 import com.badlogic.gdx.graphics.Color;
-import com.badlogic.gdx.graphics.Cursor;
-import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
@@ -11,15 +8,13 @@ import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Polygon;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.Body;
-import com.gdx.rainbow.objects.Player;
-import com.gdx.rainbow.MyGdxGame;
 
 /**
  * Created by WAM on 9/5/2016.
  */
 public class Sunbeam {
 
-    private float xStart, xCenterTop, xCenterBottom;
+    public float xStart, xCenterTop, xCenterBottom;
     private float width, height;
     public float widthScl = 1;
     public Polygon shape;
@@ -31,7 +26,7 @@ public class Sunbeam {
 
     private float angleToXDestInDegrees = 0;
 
-    float xDest, nextXDest;
+    public float xDest, nextXDest;
 
     public float speed = 1;
 
@@ -41,7 +36,7 @@ public class Sunbeam {
         width = 4f * (.2f);
         width *= 1.5f;
         width *= widthScl;
-        height = GameScreen.UNIT_HEIGHT;
+        height = com.gdx.rainbow.screens.GameScreen.UNIT_HEIGHT;
         xStart = -width/2;
         setVertices();
     }
@@ -64,16 +59,16 @@ public class Sunbeam {
         float[] vertices = new float[8];
         //First Vertex Top Left
         vertices[0] = xCenterTop - width/2;
-        vertices[1] = GameScreen.UNIT_HEIGHT/2;
+        vertices[1] = com.gdx.rainbow.screens.GameScreen.UNIT_HEIGHT/2;
         //Second Vertex Bottom Left
         vertices[2] = xCenterTop - width/2 - width/3;
-        vertices[3] = GameScreen.UNIT_HEIGHT/2 - height;
+        vertices[3] = com.gdx.rainbow.screens.GameScreen.UNIT_HEIGHT/2 - height;
         //Third Vertex Bottom Right
         vertices[4] = xCenterTop + width/2 + width/3;
-        vertices[5] = GameScreen.UNIT_HEIGHT/2 - height;
+        vertices[5] = com.gdx.rainbow.screens.GameScreen.UNIT_HEIGHT/2 - height;
         //Fourth Vertex Top Right
         vertices[6] = xCenterTop + width/2;
-        vertices[7] = GameScreen.UNIT_HEIGHT/2;
+        vertices[7] = com.gdx.rainbow.screens.GameScreen.UNIT_HEIGHT/2;
         shape.setVertices(vertices);
     }
 
@@ -107,14 +102,13 @@ public class Sunbeam {
     public void update(float xDest, float delta) {
         float dx = calcDx(xDest);
         this.xDest = xDest;
-        if (GameScreen.TESTING) dx = 0;
         if (typeOfMovement) {
             pushVertices(dx, delta);
 
             //Only recalculate angle if the beam is doing rotational movement
-            Vector2 start = new Vector2(xCenterBottom - xCenterTop, GameScreen.UNIT_HEIGHT / 2 - -GameScreen.UNIT_HEIGHT / 2);
+            Vector2 start = new Vector2(xCenterBottom - xCenterTop, com.gdx.rainbow.screens.GameScreen.UNIT_HEIGHT / 2 - -com.gdx.rainbow.screens.GameScreen.UNIT_HEIGHT / 2);
             start.nor();
-            Vector2 end = new Vector2(xCenterBottom + dx * delta - xCenterTop, GameScreen.UNIT_HEIGHT / 2 - -GameScreen.UNIT_HEIGHT / 2);
+            Vector2 end = new Vector2(xCenterBottom + dx * delta - xCenterTop, com.gdx.rainbow.screens.GameScreen.UNIT_HEIGHT / 2 - -com.gdx.rainbow.screens.GameScreen.UNIT_HEIGHT / 2);
             end.nor();
             float dTheta = (180 / MathUtils.PI) * (float) Math.acos((start.dot(end)));
             float dir = 1;
@@ -135,8 +129,8 @@ public class Sunbeam {
         xScale *= widthScl;
         float yScale = .08f;
         float x = xCenterTop;
-        float y= GameScreen.UNIT_HEIGHT/2 + .2f;
-        float a = .45f + .1f * MathUtils.sin(GameScreen.ELAPSED_TIME/3);
+        float y= com.gdx.rainbow.screens.GameScreen.UNIT_HEIGHT/2 + .2f;
+        float a = .45f + .1f * MathUtils.sin(com.gdx.rainbow.screens.GameScreen.ELAPSED_TIME/3);
         a *= .68f;
         a *= ALPHA;
         if (a < 0) a = 0;
@@ -152,7 +146,7 @@ public class Sunbeam {
 
         //add more glimmer when the sun timer is filling up!
         for (int i = 0; i < numOfExtraBeams; i++) {
-            float desyncedTimer = GameScreen.ELAPSED_TIME + timerDesyncValues[i];
+            float desyncedTimer = com.gdx.rainbow.screens.GameScreen.ELAPSED_TIME + timerDesyncValues[i];
             float aa = a - (.15f * Math.abs(MathUtils.sin(desyncedTimer/2))) + (.05f * MathUtils.sin(desyncedTimer*2f));
             if (aa < 0) aa = 0;
 
@@ -162,7 +156,7 @@ public class Sunbeam {
             //The timer in the color makes the sunlight switch between yellow light and whitish light
             batch.setColor(.9f, 1, .59f + .3f * Math.abs(MathUtils.sin(desyncedTimer/5)), aa);
             //batch.draw(t, x - tWidth/2 + dir * (i * xScale * tWidth * .04f), y - tHeight/2 * 2f, tWidth/2, 2f * tHeight/2, tWidth, tHeight, xScale, yScale, angleToXDestInDegrees + dir * i * ((0.55f) * Math.abs(MathUtils.sin(GameScreen.ELAPSED_TIME/3))));
-            batch.draw(t, x - tWidth/2 + dir * widthScl * (i * xScale * tWidth * .075f), y - tHeight/2 * 2f, tWidth/2, 2f * tHeight/2, tWidth, tHeight, xScale, yScale, angleToXDestInDegrees + dir * i * ((0.55f) * Math.abs(MathUtils.sin(GameScreen.ELAPSED_TIME/3))));
+            batch.draw(t, x - tWidth/2 + dir * widthScl * (i * xScale * tWidth * .075f), y - tHeight/2 * 2f, tWidth/2, 2f * tHeight/2, tWidth, tHeight, xScale, yScale, angleToXDestInDegrees + dir * i * ((0.55f) * Math.abs(MathUtils.sin(com.gdx.rainbow.screens.GameScreen.ELAPSED_TIME/3))));
             batch.setColor(1, 1, 1, 1);
         }
 
@@ -178,12 +172,12 @@ public class Sunbeam {
         sr.line(vertices[6], vertices[7], vertices[0], vertices[1]);
 
         sr.setColor(Color.ORANGE);
-        sr.line(xCenterTop, GameScreen.UNIT_HEIGHT/2, xDest, -GameScreen.UNIT_HEIGHT/2);
+        sr.line(xCenterTop, com.gdx.rainbow.screens.GameScreen.UNIT_HEIGHT/2, xDest, -com.gdx.rainbow.screens.GameScreen.UNIT_HEIGHT/2);
         sr.setColor(Color.BROWN);
-        sr.line(xCenterTop, GameScreen.UNIT_HEIGHT/2, xCenterBottom, -GameScreen.UNIT_HEIGHT/2);
+        sr.line(xCenterTop, com.gdx.rainbow.screens.GameScreen.UNIT_HEIGHT/2, xCenterBottom, -com.gdx.rainbow.screens.GameScreen.UNIT_HEIGHT/2);
 
         sr.setColor(Color.PINK);
-        sr.line(xCenterTop, GameScreen.UNIT_HEIGHT/2, nextXDest, -GameScreen.UNIT_HEIGHT/2);
+        sr.line(xCenterTop, com.gdx.rainbow.screens.GameScreen.UNIT_HEIGHT/2, nextXDest, -com.gdx.rainbow.screens.GameScreen.UNIT_HEIGHT/2);
     }
 
     public boolean contains(Body b) {

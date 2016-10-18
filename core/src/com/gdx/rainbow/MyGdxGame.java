@@ -1,18 +1,12 @@
 package com.gdx.rainbow;
 
-import com.badlogic.gdx.ApplicationAdapter;
-import com.badlogic.gdx.Game;
-import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.assets.AssetManager;
-import com.badlogic.gdx.graphics.g2d.Sprite;
-import com.badlogic.gdx.graphics.GL20;
+import com.badlogic.gdx.*;
 import com.badlogic.gdx.graphics.OrthographicCamera;
-import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-import com.badlogic.gdx.utils.viewport.ExtendViewport;
-import com.badlogic.gdx.physics.box2d.*;
-import com.badlogic.gdx.math.Vector2;
-import net.dermetfan.gdx.graphics.g2d.Box2DSprite;
+import com.badlogic.gdx.utils.viewport.Viewport;
+import com.gdx.rainbow.screens.*;
+import com.gdx.rainbow.screens.menus.utils.Menu;
 
 public class MyGdxGame extends Game {
 
@@ -23,56 +17,88 @@ public class MyGdxGame extends Game {
 
     public SpriteBatch batcher;
 
-	//Horrible disgusting temporary fix
-	public GameScreen s1;
-	public UpgradeScreen s2;
+	public OrthographicCamera guiCam;
+	public Viewport viewport;
 
-	private boolean game = false;
-	//
+	public BitmapFont font;
+
+	//Horrible disgusting temporary fix
+	public GameScreen gameScreen;
+	public UpgradeScreen upgradeScreen;
+	public MainMenu mainMenu;
+	public CharacterSelectScreen characterSelectScreen;
+	public WinScreen winScreen;
+	public LoseScreen loseScreen;
+	public HelpScreen helpScreen;
+
+	private ScreenAdapter screen;
+
+	public static Preferences PREFS;
+	public static Unlocks UNLOCKS;
+
+	public MyGdxGame() {
+	}
 
 	@Override
 	public void create () {
 	    batcher = new SpriteBatch();
+
+		PREFS = Gdx.app.getPreferences("My Preferences");
+		PREFS.putBoolean("Unlocked_Mode_ClearSkies", true);
+		PREFS.putBoolean("Unlocked_Mode_Zen", true);
+		PREFS.putBoolean("Unlocked_Character_Storm", true);
+		PREFS.putBoolean("Unlocked_Character_Storm", true);
+		PREFS.putInteger("High_Score", 0);
+
+		UNLOCKS = new Unlocks(PREFS);
 		Assets.load();
-		//setScreen(new GameScreen(this));
-		//setScreen(new UpgradeScreen(this, Stats.STARTING_STATS));
+		Selectable.initializeImages();
 
-		s1 = new GameScreen(this);
-		s2 = new UpgradeScreen(this, null);
+		gameScreen = new GameScreen(this);
+		upgradeScreen = new UpgradeScreen(this);
+		mainMenu = new MainMenu(this);
+		characterSelectScreen = new CharacterSelectScreen(this);
+		winScreen = new WinScreen(this);
+		loseScreen = new LoseScreen(this);
+		helpScreen = new HelpScreen(this);
 
-		set(game);
+
+		Score.HIGH_SCORE = MyGdxGame.PREFS.getInteger("High_Score");
+
+		set(mainMenu);
 
 		MyGdxGame.WIDTH = Gdx.graphics.getWidth();
 		MyGdxGame.HEIGHT = Gdx.graphics.getHeight();
 
 	}
 
-	public void set(boolean game) {
-		this.game = game;
-		if (game) {
-			Gdx.input.setInputProcessor(s1);
-			s1.stats = s2.stats;
-			s1.points = s2.points;
+	public void set(ScreenAdapter screen) {
+		if (Assets.rain_sound.isPlaying()) Assets.rain_sound.pause();
+		ScreenAdapter previousScreen = this.screen;
+		this.screen = screen;
 
+		if (screen instanceof Menu) {
+			Menu m = (Menu) screen;
+			m.onScreenSwitch(previousScreen);
 		}
-		else {
-			Gdx.input.setInputProcessor(s2);
-			s2.stats = s1.stats;
-			s2.points = s1.points;
-		}
+
+		if (screen == gameScreen && previousScreen != helpScreen) gameScreen.startLevel();
+
+		Gdx.input.setInputProcessor((InputProcessor) this.screen);
+
 	}
 
 	@Override
 	public void render () {
 		super.render();
-		if (game) s1.render(Gdx.graphics.getDeltaTime());
-		else s2.render(Gdx.graphics.getDeltaTime());
+		screen.render(Gdx.graphics.getDeltaTime());
 	}
 
 	@Override
     public void dispose() {
+		System.out.println("PREFS NOT SAVED");
+		//PREFS.flush();
 		super.dispose();
-	    this.getScreen().dispose();
         Assets.dispose();
         batcher.dispose();
     }

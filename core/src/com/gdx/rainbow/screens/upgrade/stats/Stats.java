@@ -1,4 +1,4 @@
-package com.gdx.rainbow;
+package com.gdx.rainbow.screens.upgrade.stats;
 
 import java.util.ArrayList;
 
@@ -13,14 +13,13 @@ public class Stats {
     public static final Stat SPEED = new Stat("Speed", 1.5f, 4.5f);
     public static final Stat ACCELERATION = new Stat("Acceleration", .8f, 5f);    //How easily the player accelerates and deccelerates. This is done by changing the players density to be lighter
     public static final Stat PUSH_RANGE = new Stat("Blow Range", 1f, 2.75f);
-    public static final Stat PUSH_STRENGTH = new Stat("Blow Strength", 1f, 6f);//3);//1.75f);
+    public static final Stat PUSH_STRENGTH = new Stat("Blow Strength", 2f, 7f);//3);//1.75f);
     public static final Stat PUSHBACK_FORCE = new Stat("Blowback", 3.5f, 0f);
     public static final Stat SUN_RESET = new Stat("Sun Timer Reset", 10, .6f);
     public static final Stat WIND_RESIST = new Stat("P Wind Resist", 5f, 0f);
     public static final Stat SUN_CLOUD_SIZE_MOD = new Stat("Cloud Sun Hogging", 1f, 0f);
 
 
-    public static Stats STARTING_STATS = new Stats(0, 0, 0, 0, 0, 0, 0, 0);
     public static final Stats END_STATS = new Stats(1, 1, 1, 1, 1, 1, 1, 1);
 
     public static final int NUM_OF_UPGRADES = 10;
@@ -37,6 +36,10 @@ public class Stats {
 
     public float[] stats = new float[STATS.size()];
     public int[] upgradedAmt = new int[STATS.size()];
+
+    public Stats () {
+       this.set(0, 0, 0, 0, 0, 0, 0, 0);
+    }
 
     public Stats(float percentSpeed, float percentAcceleration, float percentPushRange, float percentPushStrength, float percentPushBackForce, float percentSunReset, float percentWindResist, float percentSunCloudSizeMod) {
        this.set(percentSpeed, percentAcceleration, percentPushRange, percentPushStrength, percentPushBackForce, percentSunReset, percentWindResist, percentSunCloudSizeMod);

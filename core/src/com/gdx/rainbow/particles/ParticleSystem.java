@@ -7,7 +7,7 @@ import com.badlogic.gdx.math.MathUtils;
 import com.gdx.rainbow.Assets;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.math.Vector2;
-import com.gdx.rainbow.GameScreen;
+import com.gdx.rainbow.screens.GameScreen;
 
 
 import java.util.ArrayList;
@@ -30,15 +30,6 @@ public class ParticleSystem {
 
     private Vector2 offSet, intiialVelocity, initialAcceleration;
     public Color colorOffset = new Color(1, 1, 1, 1);
-
-    //Lightning Things
-    private float nextLightningTimer = 0;
-    private float nextLightningTime = 60;
-
-    public float maxNextLightningTime;
-
-    private float drawLightningTimer = 0;
-    private float drawLightningTime = .36f;
 
 
     public ParticleSystem(ParticleSystemInfo info) {
@@ -76,7 +67,6 @@ public class ParticleSystem {
     public void update(float delta, int particlesPerFrame) {
 
         if (info.nextParticleTime >= 0) nextParticleTimer += delta;
-        nextLightningTimer += delta;
 
         if (specialDelayTime != 0) {
             this.specialDelayTimer += delta;
@@ -86,20 +76,6 @@ public class ParticleSystem {
                 this.addParticle(offSet, intiialVelocity, initialAcceleration);
             }
         }
-
-        if (nextLightningTimer >= nextLightningTime) {
-
-            drawLightningTimer += delta;
-
-            if (drawLightningTimer >= drawLightningTime) {
-                nextLightningTime = MathUtils.random(7f, maxNextLightningTime);
-                nextLightningTimer = 0;
-                drawLightningTimer = 0;
-                Assets.thunder_sound.play();
-            }
-
-        }
-
 
         if (info.nextParticleTime > 0) {
             if (nextParticleTimer >= info.nextParticleTime) {
@@ -117,7 +93,7 @@ public class ParticleSystem {
                 else if (p.timer >= info.life) removedParticles.add(p);
             }
 
-            //if particle info specifies that particles should despawn on their own
+            //if particle info specifies that particles should despawn on their own then despawn them
             if (info.life > 0) if (p.timer >= info.life) removedParticles.add(p);
 
         }
@@ -174,20 +150,6 @@ public class ParticleSystem {
 
 
         particles.add(new Particle(position, velocity, acceleration, c, info.angleOffset, info.life));
-    }
-
-    public void createLightning() {
-        this.nextLightningTimer = this.nextLightningTime;
-    }
-
-    public void drawLightning(SpriteBatch batch) {
-        if (drawLightningTimer == 0) return;
-        float per = drawLightningTimer/drawLightningTime;
-        if (((int) (per * 100)) % 4 == 0) return;
-        TextureRegion r = new TextureRegion(Assets.lightning_image);
-        batch.setColor(1, 1, .87f, per);
-        batch.draw(r, -r.getRegionWidth()/2, -r.getRegionHeight()/2);
-        batch.setColor(1, 1, 1, 1);
     }
 
     public void drawParticles(SpriteBatch batch) {

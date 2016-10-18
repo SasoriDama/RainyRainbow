@@ -2,9 +2,7 @@ package com.gdx.rainbow.objects;
 
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.physics.box2d.*;
-import com.badlogic.gdx.physics.box2d.BodyDef.BodyType;
-import com.gdx.rainbow.Assets;
-import com.gdx.rainbow.GameScreen;
+import com.gdx.rainbow.screens.GameScreen;
 import net.dermetfan.gdx.graphics.g2d.Box2DSprite;
 
 /**
@@ -12,7 +10,7 @@ import net.dermetfan.gdx.graphics.g2d.Box2DSprite;
  */
 public class Object {
 
-    public static final int PLAYER = 0, CLOUD = 1, DENSE_CLOUD = 2, POWER_UP = 3;
+    public static final int PLAYER = 0, CLOUD = 1, DENSE_CLOUD = 2, CLEAR_SKIES_CLOUD = 3, RARE_CLOUD = 4;
 
     //Collision Filters
     public static final short CATEGORY_PLAYER = 0x0001;
@@ -26,15 +24,20 @@ public class Object {
 
     public Body body;
 
+    protected float justSpawned = 1f;
+
     protected Fixture fixture;
     protected BodyDef bodyDef;
     protected FixtureDef fixtureDef;
 
-    protected float density = .5f;
+    protected float density = .5f, friction = .4f, restitution = 1f;
+    protected float width, height;
     protected short categoryMask, categoryBit;
-    public Box2DSprite image;
+    //defualt image set in constructor
+    public Box2DSprite start_image;
 
-   private Box2DSprite sprite;
+    //current image
+    private Box2DSprite sprite;
 
     public float timerOffset;
 
@@ -43,7 +46,8 @@ public class Object {
             case (Object.PLAYER): { return new Player();}
             case (Object.CLOUD): { return new Cloud();}
             case (Object.DENSE_CLOUD): {return new DenseCloud();}
-            case (Object.POWER_UP): {return new PowerUp();}
+            case (Object.CLEAR_SKIES_CLOUD): {return new ClearSkiesCloud();}
+            case (Object.RARE_CLOUD): {return new RareCloud();}
             default: return null;
         }
     }
@@ -64,15 +68,29 @@ public class Object {
         body.setFixedRotation(true);
         gameScreen.objects.add(this);
 
-        this.setSprite(image);
+        this.setSprite(start_image);
+    }
+
+    public void handleJustSpawnedTimer(float delta) {
+        if (justSpawned == 0) return;
+        if (justSpawned > 0) justSpawned -= delta;
+        if (justSpawned < 0) justSpawned = 0;
     }
 
     protected void configBodyDef() {
-
+        bodyDef.type = BodyDef.BodyType.DynamicBody;
     }
 
     protected void configFixtureDef() {
+        PolygonShape box = new PolygonShape();
+        box.setAsBox(width, height);
 
+        fixtureDef.shape = box;
+        fixtureDef.density = this.density;
+        fixtureDef.friction = this.friction;
+        fixtureDef.restitution = this.restitution;
+        fixtureDef.filter.categoryBits = categoryMask;
+        fixtureDef.filter.maskBits = categoryBit;
     }
 
     protected void setPosition(float x, float y) {

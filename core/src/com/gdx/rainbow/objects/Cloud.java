@@ -1,6 +1,5 @@
 package com.gdx.rainbow.objects;
 
-import com.badlogic.gdx.Game;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
@@ -9,20 +8,12 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.*;
 import com.badlogic.gdx.physics.box2d.BodyDef.BodyType;
 import com.gdx.rainbow.Assets;
-import com.gdx.rainbow.GameScreen;
-import com.gdx.rainbow.Stats;
-import net.dermetfan.gdx.graphics.g2d.Box2DSprite;
+import com.gdx.rainbow.screens.GameScreen;
 
 /**
  * Created by WAM on 9/5/2016.
  */
 public class Cloud extends Object {
-
-    public float sunTimer = 0;
-    private float justSpawned = 1;
-
-    //public static final float WIDTH = .768f * .98f;
-    //public static final float HEIGHT = .356f * .98f;
 
     public static final float WIDTH = .768f * .85f;
     public static final float HEIGHT = .356f * .85f;
@@ -30,21 +21,25 @@ public class Cloud extends Object {
     public float pushedTimer = 0;
     public static final float PUSH_TIME = .75f;
 
+    public float sunTimer = 0;
+
+    //private scaled delta and nD normal delta
+    float d;
+
     //suntimer rotation
     float rot = 0;
 
     public Cloud() {
         super();
-        image = Assets.cloud_image;
+        start_image = Assets.cloud_image;
+        width = WIDTH;
+        height = HEIGHT;
         categoryMask = Object.MASK_CLOUD;
         categoryBit = Object.CATEGORY_CLOUD;
     }
 
     public void set(GameScreen gameScreen, float x, float y, Vector2 initialVel) {
         super.set(gameScreen, x, y);
-
-        setSprite(image);
-
         body.setLinearVelocity(initialVel);
     }
 
@@ -59,13 +54,8 @@ public class Cloud extends Object {
         if (pushedTimer < 0) pushedTimer = 0;
     }
 
-    public void handleJustSpawnedTimer(float delta) {
-        if (justSpawned == 0) return;
-        if (justSpawned > 0) justSpawned -= delta;
-        if (justSpawned < 0) justSpawned = 0;
-    }
-
     public void handleSunTimer(float delta) {
+        d = delta;
         sunTimer += (delta);
         if (sunTimer >= GameScreen.WIN_TIME) sunTimer = GameScreen.WIN_TIME;
     }
@@ -85,6 +75,9 @@ public class Cloud extends Object {
     }
 
     public void drawTimer(SpriteBatch batch, float nextXDest) {
+
+        //dont draw if timer is incrementing too slowly and it is not even a significant amount
+        if (d < .003f && getWinPercent() < .1f) return;
 
         float sunSize = .30f;
         float sunTickSize = .0016f;
@@ -161,7 +154,7 @@ public class Cloud extends Object {
 
         float eccentricity = 1.3f;
         float transparency = .45f;
-        transparency = .85f;
+        transparency = .65f;
 
         //dist from cloud to bottom center
         float radius = (float) Math.sqrt(tempX * tempX + tempY * tempY);
@@ -209,22 +202,6 @@ public class Cloud extends Object {
 
 
 
-    }
-
-    protected void configBodyDef() {
-        bodyDef.type = BodyType.DynamicBody;
-    }
-
-    protected void configFixtureDef() {
-        PolygonShape box = new PolygonShape();
-        box.setAsBox(WIDTH, HEIGHT);
-
-        fixtureDef.shape = box;
-        fixtureDef.density = this.density;//.85f;
-        fixtureDef.friction = .4f;
-        fixtureDef.restitution = 1f;
-        fixtureDef.filter.categoryBits = categoryMask;
-        fixtureDef.filter.maskBits = categoryBit;
     }
 
 }

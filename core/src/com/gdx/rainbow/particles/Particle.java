@@ -3,13 +3,9 @@ package com.gdx.rainbow.particles;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
-import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
-import com.gdx.rainbow.Assets;
 import com.badlogic.gdx.graphics.Texture;
-import com.gdx.rainbow.GameScreen;
-import com.gdx.rainbow.MyGdxGame;
 
 /**
  * Created by WAM on 9/13/2016.

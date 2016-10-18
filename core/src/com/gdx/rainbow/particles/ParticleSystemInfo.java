@@ -1,11 +1,10 @@
 package com.gdx.rainbow.particles;
 
-import com.badlogic.gdx.Game;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.graphics.Texture;
 import com.gdx.rainbow.Assets;
-import com.gdx.rainbow.GameScreen;
+import com.gdx.rainbow.screens.GameScreen;
 
 /**
  * Created by WAM on 10/3/2016.
